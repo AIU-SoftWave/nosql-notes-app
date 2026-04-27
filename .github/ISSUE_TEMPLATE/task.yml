@@ -1,0 +1,32 @@
+name: Task
+description: General development task
+labels: [task]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Description
+        Describe the task.
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps
+      description: List the steps required to complete this task.
+      placeholder: |
+        - [ ] Step 1
+        - [ ] Step 2
+        - [ ] Step 3
+  - type: textarea
+    id: done-criteria
+    attributes:
+      label: Done Criteria
+      description: What are the requirements for this task to be considered complete?
+      placeholder: |
+        - [ ] Completed implementation
+        - [ ] Code reviewed
+        - [ ] Merged into dev
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Optional notes.

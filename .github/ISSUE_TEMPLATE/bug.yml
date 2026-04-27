@@ -1,0 +1,43 @@
+name: Bug Report
+description: Report a bug or issue
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Description
+        Describe the bug clearly.
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: List the steps to reproduce the bug.
+      placeholder: |
+        1. Step one
+        2. Step two
+        3. Step three
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: What should happen?
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual Behavior
+      description: What actually happens?
+  - type: input
+    id: screenshots
+    attributes:
+      label: Screenshots (if any)
+      description: Add links or upload screenshots if applicable.
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser, OS, etc.
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Any additional context.

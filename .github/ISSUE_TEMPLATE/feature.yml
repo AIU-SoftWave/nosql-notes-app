@@ -1,0 +1,37 @@
+name: Feature Request
+description: Create a new feature task
+labels: [feature]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Description
+        Describe the feature clearly.
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: What problem does this solve?
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Tasks
+      description: List the tasks required for this feature.
+      placeholder: |
+        - [ ] Task 1
+        - [ ] Task 2
+        - [ ] Task 3
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: What are the requirements for this feature to be considered complete?
+      placeholder: |
+        - [ ] Feature works as expected
+        - [ ] Code is tested
+        - [ ] No breaking changes
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Additional details if needed.
