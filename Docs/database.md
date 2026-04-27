@@ -2,7 +2,7 @@
 
 ## Overview
 
-The system uses MongoDB as a document-based NoSQL database.
+The system uses MongoDB as a document-based NoSQL database, integrated with a NestJS backend and accessed via RESTful APIs from a Next.js frontend.
 
 ---
 
