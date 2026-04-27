@@ -16,9 +16,9 @@ The project focuses on highlighting the advantages of NoSQL over traditional rel
 
 ## Tech Stack
 
-* Frontend: React (or basic HTML/CSS/JavaScript)
-* Backend: Node.js with Express
-* Database: MongoDB
+* Frontend: Next.js (React framework)
+* Backend: NestJS (Node.js framework)
+* Database: MongoDB (NoSQL)
 
 ## Project Structure
 

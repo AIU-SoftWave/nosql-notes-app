@@ -20,6 +20,7 @@
 
 * Use Postman or similar tools
 * Validate request/response format
+* Test RESTful endpoints provided by NestJS backend
 
 ### Edge Cases
 
@@ -31,12 +32,20 @@
 
 ## Manual Testing
 
-* Verify UI behavior
-* Check data consistency
+* Verify UI behavior in Next.js frontend
+* Check data consistency in MongoDB
+
+---
+
+## Automated Testing (Recommended)
+
+* Add unit tests for backend (NestJS, e.g., using Jest)
+* Add integration tests for API endpoints
+* Add frontend tests (Next.js, e.g., using React Testing Library)
 
 ---
 
 ## Future Improvements
 
-* Automated testing
-* Unit testing for backend
+* Increase test coverage for backend and frontend
+* Add CI/CD integration for automated test runs

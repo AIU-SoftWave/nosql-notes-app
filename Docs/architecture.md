@@ -4,15 +4,27 @@
 
 The application follows a three-tier architecture:
 
-1. Frontend (Client)
-2. Backend (Server/API)
+1. Frontend (Next.js)
+2. Backend (NestJS API)
 3. Database (MongoDB)
 
 ---
 
-## Architecture Diagram (Logical)
+## Architecture Diagram (Mermaid)
 
-Frontend → Backend API → MongoDB
+```mermaid
+flowchart LR
+    A[User/Browser]
+    B[Next.js Frontend]
+    C[NestJS Backend API]
+    D[MongoDB Database]
+    A-->|UI Interaction|B
+    B-->|HTTP Request|C
+    C-->|Query/Update|D
+    D-->|Data|C
+    C-->|API Response|B
+    B-->|Render/Update|A
+```
 
 ---
 
@@ -20,31 +32,39 @@ Frontend → Backend API → MongoDB
 
 ### Frontend
 
-* Built using React
-* Handles user interface and user interactions
-* Communicates with backend via HTTP requests
+* Built using Next.js (React framework)
+* Handles user interface, routing, and user interactions
+* Communicates with backend via HTTP requests (REST API)
 
 ### Backend
 
-* Built using Node.js and Express
-* Handles business logic
+* Built using NestJS (Node.js framework)
+* Handles business logic and validation
 * Provides RESTful APIs
 * Interacts with MongoDB
 
 ### Database
 
 * MongoDB (NoSQL document database)
-* Stores notes, comments, and metadata
+* Stores notes, comments, tags, and metadata
 
 ---
 
-## Data Flow
+## Data Flow (Mermaid)
 
-1. User performs action on frontend
-2. Request sent to backend API
-3. Backend processes request
-4. Data stored/retrieved from MongoDB
-5. Response returned to frontend
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Next.js Frontend
+    participant B as NestJS Backend
+    participant M as MongoDB
+    U->>F: Interact (e.g., create note)
+    F->>B: HTTP API Request
+    B->>M: Query/Update
+    M-->>B: Data/Result
+    B-->>F: API Response
+    F-->>U: UI Update
+```
 
 ---
 
@@ -53,3 +73,5 @@ Frontend → Backend API → MongoDB
 * Use of NoSQL for flexible schema
 * Embedding comments within notes to reduce joins
 * REST API for clear separation of concerns
+* Next.js for SSR/SPA flexibility
+* NestJS for modular, scalable backend

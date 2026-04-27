@@ -10,6 +10,8 @@ Example:
 
 * feature/backend-api
 * feature/frontend-ui
+* feature/nestjs-migration
+* feature/nextjs-ui
 
 ---
 
@@ -17,7 +19,7 @@ Example:
 
 1. Pull latest dev branch
 2. Create feature branch
-3. Implement feature
+3. Implement feature (NestJS backend, Next.js frontend, MongoDB)
 4. Commit changes
 5. Push branch
 6. Open Pull Request to dev
@@ -27,11 +29,11 @@ Example:
 
 ## Commit Guidelines
 
-* Use clear messages
+* Use clear, descriptive messages
 * Example:
 
-  * "Add create note API"
-  * "Implement comment feature"
+  * "Add create note API (NestJS)"
+  * "Implement comment UI (Next.js)"
 
 ---
 

@@ -8,6 +8,15 @@
 
 ---
 
+## Stack & Standards
+
+- Backend: NestJS (Node.js framework)
+- Follows RESTful conventions
+- All responses use JSON: `{ success, data, message }`
+- Error responses use appropriate HTTP status codes and descriptive messages
+
+---
+
 ## Endpoints
 
 ### 1. Create Note
@@ -80,3 +89,24 @@ PATCH /api/notes/:id/view
   "message": "optional message"
 }
 ```
+
+---
+
+## Error Handling
+
+- All errors return a JSON object with `success: false`, a `message`, and (optionally) an `error` field.
+- Example:
+
+```json
+{
+  "success": false,
+  "message": "Note not found",
+  "error": "NotFoundException"
+}
+```
+
+---
+
+## Notes
+- All endpoints are stateless and require no authentication (for demo version).
+- Extend with authentication and authorization as needed for production.

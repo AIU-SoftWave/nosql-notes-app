@@ -68,3 +68,44 @@ The system is a web-based application consisting of:
 
 * Users do not require authentication (basic version)
 * System is used for demonstration purposes
+
+---
+
+## 9. Technology Stack
+
+* Backend: NestJS (Node.js framework)
+* Frontend: Next.js (React framework)
+* Database: MongoDB (NoSQL)
+
+---
+
+## 10. User Stories / Use Cases
+
+* As a user, I can create, view, update, and delete notes.
+* As a user, I can add comments to notes.
+* As a user, I can assign tags to notes and filter/search by tags.
+* As a user, I can see the number of views for each note.
+
+---
+
+## 11. Error Handling & API Standards
+
+* All API responses must follow a consistent JSON format with `success`, `data`, and `message` fields.
+* Errors must return appropriate HTTP status codes and descriptive messages.
+
+---
+
+## 12. Security, Reliability, and Accessibility
+
+* Basic input validation on all endpoints.
+* Secure API endpoints against common vulnerabilities (e.g., injection, XSS).
+* The system should be reliable and handle unexpected errors gracefully.
+* The frontend should be accessible (basic ARIA and keyboard navigation support).
+
+---
+
+## 13. Scalability & Deployment
+
+* The system should be containerizable (Docker support recommended).
+* Should support horizontal scaling for backend and database.
+* Deployment environment: cloud or on-premises, with environment variables for configuration.
