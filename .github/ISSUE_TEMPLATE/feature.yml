@@ -1,37 +1,117 @@
 name: Feature Request
-description: Create a new feature task
+description: Create a feature that delivers one clear slice of the project
 labels: [feature]
 body:
   - type: markdown
     attributes:
       value: |
-        ## Description
-        Describe the feature clearly.
+        ## Feature Planning
+        Use this template for one small, deliverable feature.
+        Keep the issue focused so it can be finished in one PR and can unlock the next issue cleanly.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of the system does this feature belong to?
+      options:
+        - Backend
+        - Frontend
+        - Database
+        - API Contract
+        - DevOps / Setup
+        - Documentation
+    validations:
+      required: true
+  - type: dropdown
+    id: size
+    attributes:
+      label: Size
+      description: Prefer small issues that can be completed independently.
+      options:
+        - Small
+        - Medium
+        - Large (consider splitting)
+    validations:
+      required: true
   - type: textarea
     id: objective
     attributes:
       label: Objective
-      description: What problem does this solve?
+      description: What user or project need does this solve?
+      placeholder: |
+        Example: Users need a backend endpoint to create notes so the frontend form can save data.
+    validations:
+      required: true
+  - type: textarea
+    id: in-scope
+    attributes:
+      label: In Scope
+      description: List only what this issue will deliver.
+      placeholder: |
+        - Create POST /notes endpoint
+        - Validate request body
+        - Save note in MongoDB
+    validations:
+      required: true
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of Scope
+      description: List work that should not be included in this issue.
+      placeholder: |
+        - Frontend form UI
+        - Edit note endpoint
+        - Comment support
+  - type: input
+    id: depends-on
+    attributes:
+      label: Depends On
+      description: Link the issue(s) that must be completed first.
+      placeholder: |
+        #12
+  - type: input
+    id: unlocks
+    attributes:
+      label: Unblocks / Enables
+      description: Link the issue(s) that this work will enable next.
+      placeholder: |
+        #13, #14
   - type: textarea
     id: tasks
     attributes:
-      label: Tasks
-      description: List the tasks required for this feature.
+      label: Implementation Tasks
+      description: Break the work into concrete steps.
       placeholder: |
-        - [ ] Task 1
-        - [ ] Task 2
-        - [ ] Task 3
+        - [ ] Add module/service/controller structure
+        - [ ] Implement feature logic
+        - [ ] Add validation and error handling
+        - [ ] Add tests
+        - [ ] Update docs if needed
+    validations:
+      required: true
   - type: textarea
     id: acceptance-criteria
     attributes:
       label: Acceptance Criteria
-      description: What are the requirements for this feature to be considered complete?
+      description: What must be true before this issue can be closed?
       placeholder: |
-        - [ ] Feature works as expected
-        - [ ] Code is tested
-        - [ ] No breaking changes
+        - [ ] Feature works as described
+        - [ ] Tests pass or manual verification steps are documented
+        - [ ] API response format follows project standards
+        - [ ] No unrelated behavior is changed
+    validations:
+      required: true
+  - type: textarea
+    id: testing
+    attributes:
+      label: Verification Plan
+      description: How will this feature be tested or checked?
+      placeholder: |
+        - Create sample request in Postman / Swagger
+        - Verify success response format
+        - Verify invalid input returns proper error
   - type: textarea
     id: notes
     attributes:
       label: Notes
-      description: Additional details if needed.
+      description: Additional links, examples, design notes, or technical decisions.
