@@ -1,0 +1,58 @@
+name: Epic
+description: Track a larger feature by splitting it into small dependent issues
+labels: [epic]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Epic Overview
+        Use this template for a parent issue only.
+        The actual implementation should be split into child feature/task issues.
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: What major capability are we trying to deliver?
+      placeholder: |
+        Example: Deliver complete note management from backend API to frontend UI.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Summarize the boundaries of this epic.
+      placeholder: |
+        Includes note CRUD, note list UI, and API integration.
+        Excludes comments, tags, and analytics.
+    validations:
+      required: true
+  - type: textarea
+    id: child-issues
+    attributes:
+      label: Child Issues
+      description: Break the epic into small issues in dependency order.
+      placeholder: |
+        - [ ] #12 Backend note schema and model
+        - [ ] #13 Create note API
+        - [ ] #14 List notes API
+        - [ ] #15 Frontend note list UI
+        - [ ] #16 Frontend create note form
+    validations:
+      required: true
+  - type: textarea
+    id: definition-of-done
+    attributes:
+      label: Definition of Done
+      description: When is the epic complete?
+      placeholder: |
+        - [ ] All child issues are closed
+        - [ ] End-to-end flow works
+        - [ ] Documentation is updated
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks / Notes
+      description: Dependencies, blockers, assumptions, or open questions.
