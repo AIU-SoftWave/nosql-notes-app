@@ -3,12 +3,12 @@
 ## Build, Test, and Lint Commands
 
 - **Backend**
-  - Install dependencies: `cd backend && pnpm install`
+  - Install dependencies: `cd apps/backend && pnpm install`
   - Start development server: `pnpm run dev`
   - (No explicit test/lint commands found; add here if implemented)
 
 - **Frontend**
-  - Install dependencies: `cd frontend && pnpm install`
+  - Install dependencies: `cd apps/frontend && pnpm install`
   - Start development server: `pnpm start`
   - (No explicit test/lint commands found; add here if implemented)
 
