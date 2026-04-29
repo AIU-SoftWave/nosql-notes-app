@@ -9,8 +9,8 @@ dist/
 build/
 
 # NestJS
-notes-app-project/backend/node_modules/
-notes-app-project/backend/dist/
+apps/backend/node_modules/
+apps/backend/dist/
 
 # OS files
 .DS_Store

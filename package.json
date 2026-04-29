@@ -5,17 +5,17 @@
   "private": true,
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:backend": "cd notes-app-project/backend && npm run start:dev",
-    "dev:frontend": "cd frontend && npm run dev:webpack",
+    "dev:backend": "cd apps/backend && npm run start:dev",
+    "dev:frontend": "cd apps/frontend && npm run dev:webpack",
     "build": "npm run build:backend && npm run build:frontend",
-    "build:backend": "cd notes-app-project/backend && npm run build",
-    "build:frontend": "cd frontend && npm run build",
-    "start": "npm run start:backend & npm run start:frontend",
-    "start:backend": "cd notes-app-project/backend && npm run start:prod",
-    "start:frontend": "cd frontend && npm run start",
+    "build:backend": "cd apps/backend && npm run build",
+    "build:frontend": "cd apps/frontend && npm run build",
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "cd apps/backend && npm run start:prod",
+    "start:frontend": "cd apps/frontend && npm run start",
     "test": "npm run test:backend && npm run test:frontend",
-    "test:backend": "cd notes-app-project/backend && npm run test:e2e",
-    "test:frontend": "cd frontend && npm run test 2>/dev/null || true"
+    "test:backend": "cd apps/backend && npm run test:e2e",
+    "test:frontend": "cd apps/frontend && npm run test 2>/dev/null || true"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
