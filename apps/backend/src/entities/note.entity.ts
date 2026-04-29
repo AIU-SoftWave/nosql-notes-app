@@ -1,26 +1,24 @@
-import { Entity, ObjectIdColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { Comment } from './comment.entity';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Types } from 'mongoose';
+import { Comment, CommentSchema } from './comment.entity';
 
-@Entity('notes')
+export type NoteDocument = Note & Document;
+
+@Schema({ timestamps: true, collection: 'notes' })
 export class Note {
-  @ObjectIdColumn()
-  id: string;
+  declare _id: Types.ObjectId;
 
-  @Column()
-  title: string;
+  @Prop({ required: true })
+  title!: string;
 
-  @Column()
-  content: string;
+  @Prop({ required: true })
+  content!: string;
 
-  @Column('string', { array: true })
-  tags: string[];
+  @Prop({ type: [String], default: [] })
+  tags!: string[];
 
-  @Column(() => Comment, { array: true })
-  comments: Comment[];
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
+  @Prop({ type: [CommentSchema], default: [] })
+  comments!: Comment[];
 }
+
+export const NoteSchema = SchemaFactory.createForClass(Note);

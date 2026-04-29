@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Note } from '../entities/note.entity';
+import { MongooseModule } from '@nestjs/mongoose';
+import { Note, NoteSchema } from '../entities/note.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Note])],
+  imports: [
+    MongooseModule.forFeature([{ name: Note.name, schema: NoteSchema }]),
+  ],
 })
 export class NotesModule {}
