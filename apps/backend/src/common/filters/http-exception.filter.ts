@@ -6,6 +6,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import type { Response } from 'express';
+import type { ApiResponse } from '../interfaces/api-response.interface';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -16,27 +17,33 @@ export class HttpExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const payload = exception.getResponse();
-      const message =
+      const rawMessage =
         typeof payload === 'object' && payload !== null && 'message' in payload
           ? payload.message
           : exception.message;
-      const error =
-        typeof payload === 'object' && payload !== null && 'error' in payload
-          ? payload.error
-          : exception.name;
 
-      response.status(status).json({
+      const message = Array.isArray(rawMessage)
+        ? 'Validation failed'
+        : String(rawMessage ?? exception.message);
+      const errors = Array.isArray(rawMessage)
+        ? rawMessage.map((entry) => String(entry))
+        : undefined;
+
+      const body: ApiResponse<never> = {
         success: false,
         message,
-        error,
-      });
+        ...(errors ? { errors } : {}),
+      };
+
+      response.status(status).json(body);
       return;
     }
 
-    response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+    const body: ApiResponse<never> = {
       success: false,
       message: 'Internal server error',
-      error: exception instanceof Error ? exception.name : 'Error',
-    });
+    };
+
+    response.status(HttpStatus.INTERNAL_SERVER_ERROR).json(body);
   }
 }
