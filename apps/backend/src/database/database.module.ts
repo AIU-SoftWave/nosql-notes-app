@@ -1,6 +1,7 @@
 import { Module, Logger, OnApplicationShutdown } from '@nestjs/common';
 import { TypeOrmModule, InjectDataSource } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
 import { DataSource } from 'typeorm';
 
 /** Strips credentials from a MongoDB URI for safe logging. */
@@ -17,6 +18,27 @@ function sanitizeUri(uri: string): string {
 
 @Module({
   imports: [
+    ConfigModule,
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => {
+        const uri = configService.get<string>(
+          'MONGODB_URI',
+          'mongodb://localhost:27017/notes-app',
+        );
+        const logger = new Logger('DatabaseModule');
+        if (uri) {
+          logger.log(`Connecting to MongoDB (Mongoose) at ${sanitizeUri(uri)}`);
+          return { uri };
+        } else {
+          logger.warn(
+            'MONGODB_URI is not set – running without a database connection (in-memory mode)',
+          );
+          return { uri: '' };
+        }
+      },
+      inject: [ConfigService],
+    }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
@@ -25,7 +47,7 @@ function sanitizeUri(uri: string): string {
           'mongodb://localhost:27017/notes-app',
         );
         const logger = new Logger('DatabaseModule');
-        logger.log(`Connecting to MongoDB at ${sanitizeUri(uri)}`);
+        logger.log(`Connecting to MongoDB (TypeORM) at ${sanitizeUri(uri)}`);
         return {
           type: 'mongodb',
           url: uri,
