@@ -21,40 +21,46 @@
   <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-## Description
+# Notes Backend
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+NestJS backend for the notes app.
 
-## Project setup
+## Run
 
 ```bash
-$ npm install
+npm install
+npm run start:dev
 ```
 
-## Compile and run the project
+## Database
+
+If you set `MONGODB_URI`, the app uses MongoDB through Mongoose.
+
+If `MONGODB_URI` is not set, the app falls back to an in-memory store so the API still runs locally.
+
+Example:
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+MONGODB_URI=mongodb://127.0.0.1:27017/notes-app
 ```
 
-## Run tests
+## API
+
+Base path: `/api/notes`
+
+- `POST /api/notes`
+- `GET /api/notes`
+- `GET /api/notes/:id`
+- `PUT /api/notes/:id`
+- `DELETE /api/notes/:id`
+- `POST /api/notes/:id/comments`
+- `PATCH /api/notes/:id/view`
+
+## Test
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm run build
+npm run test:e2e
 ```
 
 ## Deployment
