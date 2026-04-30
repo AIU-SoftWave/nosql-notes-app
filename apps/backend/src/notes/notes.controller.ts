@@ -22,6 +22,7 @@ import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 import { NotesService } from './notes.service';
 import { NormalizeTagsPipe } from './pipes/normalize-tags.pipe';
+import { FindAllNotesDto } from './dto/findAll.dto';
 
 @ApiTags('notes')
 @Controller('notes')
@@ -39,8 +40,11 @@ export class NotesController {
   @Get()
   @ApiOperation({ summary: 'Get all notes' })
   @ApiOkResponse({ description: 'A list of notes.' })
-  findAll(@Query('tag') tag?: string, @Query('search') search?: string) {
-    return this.notesService.findAll(tag, search);
+  findAll(@Query() findAllNotesDto: FindAllNotesDto) {
+    return this.notesService.findAll(
+      findAllNotesDto.tag,
+      findAllNotesDto.search,
+    );
   }
 
   @Get(':id')
