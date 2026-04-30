@@ -12,11 +12,12 @@ import {
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 import { NotesService } from './notes.service';
+import { ApiBody } from '@nestjs/swagger';
 
 @Controller('notes')
 export class NotesController {
   constructor(private readonly notesService: NotesService) {}
-
+  @ApiBody({ type: CreateNoteDto })
   @Post()
   @HttpCode(HttpStatus.CREATED)
   create(@Body() createNoteDto: CreateNoteDto) {
@@ -32,7 +33,7 @@ export class NotesController {
   findOne(@Param('id') id: string) {
     return this.notesService.findOne(id);
   }
-
+  @ApiBody({ type: UpdateNoteDto })
   @Put(':id')
   update(@Param('id') id: string, @Body() updateNoteDto: UpdateNoteDto) {
     return this.notesService.update(id, updateNoteDto);
