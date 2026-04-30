@@ -11,7 +11,7 @@ async function request<T>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<ApiResponse<T>> {
-  const url = `${API_BASE_URL}${endpoint}`;
+  const url = `${API_BASE_URL}/api${endpoint}`;
 
   const headers = {
     "Content-Type": "application/json",
