@@ -8,26 +8,6 @@ export type NoteDocument = HydratedDocument<Note>;
 @Schema({
   collection: 'notes',
   timestamps: true,
-  toJSON: {
-    virtuals: true,
-    transform: (_doc, ret) => {
-      const result = ret as Record<string, any>;
-      result.id = result._id?.toString();
-      delete result._id;
-      delete result.__v;
-      return ret;
-    },
-  },
-  toObject: {
-    virtuals: true,
-    transform: (_doc, ret) => {
-      const result = ret as Record<string, any>;
-      result.id = result._id?.toString();
-      delete result._id;
-      delete result.__v;
-      return ret;
-    },
-  },
 })
 export class Note {
   @ApiProperty({ example: '65f1d7c7f1d7c7f1d7c7f1d7' })
