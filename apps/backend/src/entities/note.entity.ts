@@ -1,33 +1,48 @@
-import { ObjectId } from 'mongodb';
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  ObjectIdColumn,
-  UpdateDateColumn,
-} from 'typeorm';
-import type { Comment } from './comment.entity';
+import { HydratedDocument } from 'mongoose';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Comment, CommentSchema } from './comment.entity';
 
-@Entity('notes')
+export type NoteDocument = HydratedDocument<Note>;
+
+@Schema({
+  collection: 'notes',
+  timestamps: true,
+  toJSON: {
+    virtuals: true,
+    transform: (_doc, ret) => {
+      const result = ret as Record<string, any>;
+      result.id = result._id?.toString();
+      delete result._id;
+      delete result.__v;
+      return ret;
+    },
+  },
+  toObject: {
+    virtuals: true,
+    transform: (_doc, ret) => {
+      const result = ret as Record<string, any>;
+      result.id = result._id?.toString();
+      delete result._id;
+      delete result.__v;
+      return ret;
+    },
+  },
+})
 export class Note {
-  @ObjectIdColumn()
-  id!: ObjectId;
-
-  @Column()
+  @Prop({ required: true, trim: true })
   title!: string;
 
-  @Column()
+  @Prop({ required: true, trim: true })
   content!: string;
 
-  @Column({ default: [] })
+  @Prop({ type: [String], default: [] })
   tags!: string[];
 
-  @Column({ default: [] })
+  @Prop({ type: [CommentSchema], default: [] })
   comments!: Comment[];
 
-  @CreateDateColumn()
   createdAt!: Date;
-
-  @UpdateDateColumn()
   updatedAt!: Date;
 }
+
+export const NoteSchema = SchemaFactory.createForClass(Note);

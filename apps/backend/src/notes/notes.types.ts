@@ -1,8 +1,7 @@
-import type { ObjectId } from 'mongodb';
 import type { Comment } from '../entities/comment.entity';
 
 export interface NoteListItem {
-  id: ObjectId;
+  id: string;
   title: string;
   content: string;
   tags: string[];
@@ -12,7 +11,7 @@ export interface NoteListItem {
 }
 
 export interface NoteDetail {
-  id: ObjectId;
+  id: string;
   title: string;
   content: string;
   tags: string[];
