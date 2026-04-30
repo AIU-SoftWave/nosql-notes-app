@@ -10,10 +10,18 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+} from '@nestjs/swagger';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 import { NotesService } from './notes.service';
+import { NormalizeTagsPipe } from './pipes/normalize-tags.pipe';
 
 @ApiTags('notes')
 @Controller('notes')
@@ -24,7 +32,7 @@ export class NotesController {
   @ApiOperation({ summary: 'Create a note' })
   @ApiBody({ type: CreateNoteDto })
   @ApiCreatedResponse({ description: 'The note was created successfully.' })
-  create(@Body() createNoteDto: CreateNoteDto) {
+  create(@Body(NormalizeTagsPipe) createNoteDto: CreateNoteDto) {
     return this.notesService.create(createNoteDto);
   }
 
@@ -47,7 +55,10 @@ export class NotesController {
   @ApiParam({ name: 'id', description: 'Note id' })
   @ApiBody({ type: UpdateNoteDto })
   @ApiOkResponse({ description: 'The note was updated successfully.' })
-  update(@Param('id') id: string, @Body() updateNoteDto: UpdateNoteDto) {
+  update(
+    @Param('id') id: string,
+    @Body(NormalizeTagsPipe) updateNoteDto: UpdateNoteDto,
+  ) {
     return this.notesService.update(id, updateNoteDto);
   }
 
