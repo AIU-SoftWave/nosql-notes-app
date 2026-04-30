@@ -78,7 +78,7 @@ describe('NotesController (unit)', () => {
       const result = await controller.findAll();
 
       expect(result).toEqual(mockList);
-      expect(service.findAll).toHaveBeenCalled();
+      expect(service.findAll).toHaveBeenCalledWith(undefined, undefined);
       expect(service.findAll).toHaveBeenCalledTimes(1);
     });
 
@@ -89,6 +89,35 @@ describe('NotesController (unit)', () => {
 
       expect(result).toEqual([]);
       expect(Array.isArray(result)).toBe(true);
+      expect(service.findAll).toHaveBeenCalledWith(undefined, undefined);
+    });
+
+    it('should call service with tag parameter when provided', async () => {
+      const tag = 'test';
+      mockNotesService.findAll.mockResolvedValue([]);
+
+      await controller.findAll(tag);
+
+      expect(service.findAll).toHaveBeenCalledWith(tag, undefined);
+    });
+
+    it('should call service with search parameter when provided', async () => {
+      const search = 'test search';
+      mockNotesService.findAll.mockResolvedValue([]);
+
+      await controller.findAll(undefined, search);
+
+      expect(service.findAll).toHaveBeenCalledWith(undefined, search);
+    });
+
+    it('should call service with both tag and search parameters when provided', async () => {
+      const tag = 'test';
+      const search = 'test search';
+      mockNotesService.findAll.mockResolvedValue([]);
+
+      await controller.findAll(tag, search);
+
+      expect(service.findAll).toHaveBeenCalledWith(tag, search);
     });
   });
 

@@ -24,8 +24,27 @@ export class NotesService {
     return this.toNoteDetail(note);
   }
 
-  async findAll(): Promise<NoteListItem[]> {
-    const notes = await this.notesModel.find().sort({ createdAt: -1 }).exec();
+  async findAll(tag?: string, search?: string): Promise<NoteListItem[]> {
+    const filter: any = {};
+
+    // Tag filter - case-insensitive match in tags array
+    if (tag) {
+      filter.tags = { $regex: new RegExp(tag, 'i') };
+    }
+
+    // Search filter - only apply if search string is 2+ characters
+    if (search && search.length >= 2) {
+      const searchRegex = new RegExp(search, 'i');
+      filter.$or = [
+        { title: { $regex: searchRegex } },
+        { content: { $regex: searchRegex } }
+      ];
+    }
+
+    const notes = await this.notesModel
+      .find(filter)
+      .sort({ createdAt: -1 })
+      .exec();
 
     return notes.map((note) => this.toNoteListItem(note));
   }
