@@ -4,6 +4,7 @@ import { Model, Types } from 'mongoose';
 import { Note, NoteDocument } from '../entities/note.entity';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
+import { CreateCommentDto } from './dto/create-comment.dto';
 import type { DeleteNoteResult, NoteDetail, NoteListItem } from './notes.types';
 
 @Injectable()
@@ -53,6 +54,33 @@ export class NotesService {
     const note = await this.findNoteById(id);
 
     return this.toNoteDetail(note);
+  }
+
+  async addComment(id: string, createCommentDto: CreateCommentDto): Promise<NoteDetail> {
+    // First validate that the note exists
+    await this.findNoteById(id);
+
+    // Use MongoDB $push to efficiently add the comment without fetching the entire document
+    const updated = await this.notesModel
+      .findByIdAndUpdate(
+        id,
+        {
+          $push: {
+            comments: {
+              content: createCommentDto.content,
+              createdAt: new Date(),
+            },
+          },
+        },
+        { new: true, runValidators: true },
+      )
+      .exec();
+
+    if (!updated) {
+      throw new NotFoundException('Note not found');
+    }
+
+    return this.toNoteDetail(updated);
   }
 
   async update(id: string, updateNoteDto: UpdateNoteDto): Promise<NoteDetail> {
