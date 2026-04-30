@@ -8,7 +8,7 @@ import { NotesModule } from './notes/notes.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    DatabaseModule,
+    DatabaseModule.forRoot(),
     NotesModule,
   ],
   controllers: [AppController],

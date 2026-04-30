@@ -1,41 +1,37 @@
-import { Module, Logger } from '@nestjs/common';
+import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 
 function sanitizeUri(uri: string): string {
   try {
     const url = new URL(uri);
-    url.password = url.password ? '****' : '';
-    url.username = url.username ? '****' : '';
+    if (url.username) url.username = '****';
+    if (url.password) url.password = '****';
     return url.toString();
-  } catch {
+  } catch (e) {
     return '<invalid URI>';
   }
 }
 
-@Module({
-  imports: [
-    ConfigModule,
-    MongooseModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => {
-        const uri = configService.get<string>(
-          'MONGODB_URI',
-          'mongodb://localhost:27017/notes-app',
-        );
-        const logger = new Logger('DatabaseModule');
-        if (uri) {
-          logger.log(`Connecting to MongoDB (Mongoose) at ${sanitizeUri(uri)}`);
-          return { uri };
-        } else {
-          logger.warn(
-            'MONGODB_URI is not set – running without a database connection (in-memory mode)',
-          );
-          return { uri: '' };
-        }
-      },
-      inject: [ConfigService],
-    }),
-  ],
-})
-export class DatabaseModule {}
+@Module({})
+export class DatabaseModule {
+  static forRoot(): DynamicModule {
+    const imports = [
+      ConfigModule,
+      MongooseModule.forRootAsync({
+        imports: [ConfigModule],
+        useFactory: async (configService: ConfigService) => {
+          const uri = configService.get('MONGODB_URI') || process.env.MONGODB_URI || 'mongodb://localhost:27017/notes';
+          return { uri: sanitizeUri(uri) };
+        },
+        inject: [ConfigService],
+      }),
+    ];
+
+    return {
+      module: DatabaseModule,
+      imports,
+      exports: [MongooseModule],
+    };
+  }
+}
