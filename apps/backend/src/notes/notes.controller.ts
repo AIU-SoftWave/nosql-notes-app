@@ -8,6 +8,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
 } from '@nestjs/common';
 import { ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { CreateNoteDto } from './dto/create-note.dto';
@@ -30,8 +31,8 @@ export class NotesController {
   @Get()
   @ApiOperation({ summary: 'Get all notes' })
   @ApiOkResponse({ description: 'A list of notes.' })
-  findAll() {
-    return this.notesService.findAll();
+  findAll(@Query('tag') tag?: string, @Query('search') search?: string) {
+    return this.notesService.findAll(tag, search);
   }
 
   @Get(':id')
