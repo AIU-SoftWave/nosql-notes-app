@@ -1,0 +1,112 @@
+@startuml Architecture
+!theme plain
+
+skinparam backgroundColor white
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam packageStyle rectangle
+
+skinparam defaultFontName Inter
+skinparam arrowColor #333
+skinparam componentBorderColor #333
+skinparam componentBackgroundColor white
+skinparam packageBackgroundColor white
+skinparam packageBorderColor #DDD
+
+title Notes App - Architecture Overview
+
+left to right direction
+
+' =========================
+' Frontend
+' =========================
+package "Frontend (Next.js 16)" {
+  component "Notes Page" as NP
+  component "Note Detail" as ND
+  component "Create / Edit Form" as CF
+  component "Stats Dashboard" as SD
+  component "Activity Feed" as AF
+}
+
+' =========================
+' Backend
+' =========================
+package "Backend (NestJS)" {
+  component "Notes Controller" as NC
+  component "Notes Service" as NS
+  component "DTOs" as DTO
+  component "Validation Pipes" as VP
+}
+
+' =========================
+' Database Layer
+' =========================
+package "MongoDB Layer" {
+  component "Notes Collection" as COL
+  component "Text Index" as TIDX
+  component "Tag Index" as TAGIDX
+  component "Stats Aggregation Pipeline" as PL
+  component "Activity Aggregation Pipeline" as APL
+}
+
+database "MongoDB Cluster" as DB
+
+' =========================
+' Frontend → Backend
+' =========================
+NP --> NC : GET /notes
+ND --> NC : GET /notes/:id
+CF --> NC : POST /notes
+SD --> NC : GET /stats
+AF --> NC : GET /activity
+
+' =========================
+' Backend Flow
+' =========================
+NC --> VP : validate
+VP --> DTO : transform
+DTO --> NS : logic
+
+' =========================
+' Backend → DB
+' =========================
+NS --> COL
+NS --> TIDX
+NS --> TAGIDX
+NS --> PL
+NS --> APL
+
+COL --> DB
+TIDX --> DB
+TAGIDX --> DB
+PL --> DB
+APL --> DB
+
+@enduml
+@startuml Sequence
+!theme plain
+title Sequence - Create and View Note
+
+actor User
+participant "Frontend" as FE
+participant "Backend" as BE
+participant "MongoDB" as DB
+
+=== CREATE NOTE ===
+User -> FE : Enter data
+FE -> BE : POST /api/notes
+BE -> DB : insertOne()
+DB -> BE : Created
+BE -> FE : 201
+FE -> User : Success
+
+=== VIEW NOTE ===
+User -> FE : Click note
+FE -> BE : GET /api/notes/:id
+BE -> DB : findByIdAndUpdate\n$inc: {views:1}
+DB -> BE : Note
+BE -> FE : 200
+FE -> User : Display
+
+@enduml
