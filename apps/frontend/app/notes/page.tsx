@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import NoteCard from "@/components/NoteCard";
@@ -50,7 +50,7 @@ function TagFilter({
   );
 }
 
-export default function NotesPage() {
+function NotesList() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -223,5 +223,13 @@ export default function NotesPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function NotesPage() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <NotesList />
+    </Suspense>
   );
 }

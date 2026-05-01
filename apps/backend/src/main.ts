@@ -28,13 +28,15 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs', app, document);
+
+  const corsOrigin = process.env.CORS_ORIGIN || '*';
   app.enableCors({
-    origin: '*',
+    origin: corsOrigin,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     allowedHeaders: 'Content-Type, Accept',
   });
-  const port = 5000;
-  await app.listen(port);
-  logger.log(`Backend is running on http://localhost:${port}`);
+  const port = 3000;
+  await app.listen(port, '0.0.0.0');
+  logger.log(`Backend is running on port ${port}`);
 }
 bootstrap();

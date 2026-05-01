@@ -1,0 +1,47 @@
+name: notes-app
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: notes-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - notes-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: notes-backend
+    ports:
+      - "5001:3000"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/notes_app
+      - CORS_ORIGIN=http://localhost:5002
+    depends_on:
+      - mongodb
+    networks:
+      - notes-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: notes-frontend
+    ports:
+      - "5002:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:5001
+    depends_on:
+      - backend
+    networks:
+      - notes-network
+
+networks:
+  notes-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
