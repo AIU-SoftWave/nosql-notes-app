@@ -452,7 +452,7 @@ const NoteSchema = new Schema({
 - Server-side stats via Aggregation Pipeline
 - Full-text search with compound text index
 - Activity Feed via `$unionWith`
-- Input sanitisation against NoSQL injection
+- Input sanitization against NoSQL injection
 - Consistent JSON error responses
 
 **🔭 Future Roadmap**
@@ -461,7 +461,7 @@ const NoteSchema = new Schema({
 - Real-time collaboration via WebSockets
 - Rate limiting & request throttling
 - CI/CD pipeline with automated testing
-- Containerised deployment (Docker + K8s)
+- Containerized deployment (Docker + K8s)
 - GraphQL API layer over MongoDB
 
 </div>
