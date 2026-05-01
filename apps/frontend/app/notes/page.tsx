@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import NoteCard from "@/components/NoteCard";
 import Loading from "@/components/Loading";
-import { useNotes, SortOption } from "@/lib/api/notes";
+import { useNotes, useSortAlgorithms, SortOption, SortAlgorithm } from "@/lib/api/notes";
 
 function TagFilter({
   tags,
@@ -57,10 +57,14 @@ function NotesList() {
   const activeTag = searchParams.get("tag");
   const urlSearch = searchParams.get("search") || "";
   const urlSort = (searchParams.get("sort") as SortOption) || "newest";
+  const urlAlgorithm = (searchParams.get("algorithm") as SortAlgorithm) || "merge";
 
   const [searchInput, setSearchInput] = useState(urlSearch);
   const [sortOption, setSortOption] = useState<SortOption>(urlSort);
+  const [algorithm, setAlgorithm] = useState<SortAlgorithm>(urlAlgorithm);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const { data: sortAlgorithms = [] } = useSortAlgorithms();
 
   const handleSearch = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -79,12 +83,19 @@ function NotesList() {
     data: notes = [],
     isLoading,
     error,
-  } = useNotes(activeTag || undefined, urlSearch || undefined, urlSort);
+  } = useNotes(activeTag || undefined, urlSearch || undefined, urlSort, urlAlgorithm);
 
   const handleSortChange = (newSort: SortOption) => {
     setSortOption(newSort);
     const params = new URLSearchParams(searchParams);
     params.set("sort", newSort);
+    router.push(`/notes?${params.toString()}`, { scroll: false });
+  };
+
+  const handleAlgorithmChange = (newAlgo: SortAlgorithm) => {
+    setAlgorithm(newAlgo);
+    const params = new URLSearchParams(searchParams);
+    params.set("algorithm", newAlgo);
     router.push(`/notes?${params.toString()}`, { scroll: false });
   };
 
@@ -190,6 +201,19 @@ function NotesList() {
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
               <option value="alpha">A-Z</option>
+              <option value="views">Most Views</option>
+              <option value="comments">Most Comments</option>
+            </select>
+            <select
+              value={algorithm}
+              onChange={(e) => handleAlgorithmChange(e.target.value as SortAlgorithm)}
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              {sortAlgorithms.map(algo => (
+                <option key={algo.id} value={algo.id}>
+                  {algo.name}
+                </option>
+              ))}
             </select>
             <button
               type="submit"

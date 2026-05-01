@@ -12,8 +12,13 @@ export class FindAllNotesDto {
   @IsString()
   search?: string;
 
-  @ApiPropertyOptional({ enum: ['newest', 'oldest', 'alpha'], default: 'newest' })
+  @ApiPropertyOptional({ enum: ['newest', 'oldest', 'alpha', 'views', 'comments'], default: 'newest' })
   @IsOptional()
   @IsString()
-  sort?: 'newest' | 'oldest' | 'alpha';
+  sort?: 'newest' | 'oldest' | 'alpha' | 'views' | 'comments';
+
+  @ApiPropertyOptional({ enum: ['merge', 'quick', 'bubble', 'mongo'], default: 'merge' })
+  @IsOptional()
+  @IsString()
+  algorithm?: 'merge' | 'quick' | 'bubble' | 'mongo';
 }

@@ -57,4 +57,26 @@ export interface ActivityItem {
   createdAt: string;
 }
 
-export type SortOption = 'newest' | 'oldest' | 'alpha';
+export type SortOption = 'newest' | 'oldest' | 'alpha' | 'views' | 'comments';
+
+export type SortAlgorithm = 'merge' | 'quick' | 'bubble' | 'mongo';
+
+export interface SortMetrics {
+  algorithmId: string;
+  name: string;
+  description: string;
+  timeComplexity: {
+    best: string;
+    average: string;
+    worst: string;
+  };
+  spaceComplexity: string;
+  stable: boolean;
+  category: string;
+}
+
+export interface SortAlgorithmInfo {
+  id: string;
+  name: string;
+  metrics: SortMetrics;
+}

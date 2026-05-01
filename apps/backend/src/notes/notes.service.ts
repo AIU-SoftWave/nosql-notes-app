@@ -6,15 +6,62 @@ import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import type { DeleteNoteResult, NoteDetail, NoteListItem, NoteStats, ActivityItem } from './notes.types';
+import { SortField, SortOrder, SortedNote, createMergeSort, createQuickSort, createBubbleSort } from '../utils';
 
-export type SortOption = 'newest' | 'oldest' | 'alpha';
+export type SortOption = 'newest' | 'oldest' | 'alpha' | 'views' | 'comments';
+export type SortAlgorithm = 'merge' | 'quick' | 'bubble' | 'mongo';
 
 @Injectable()
 export class NotesService {
+  private mergeSort = createMergeSort();
+  private quickSort = createQuickSort();
+  private bubbleSort = createBubbleSort();
+
   constructor(
     @InjectModel(Note.name)
     private readonly notesModel: Model<NoteDocument>,
   ) {}
+
+  private getCompareFunction(field: SortField, order: SortOrder): (a: SortedNote, b: SortedNote) => number {
+    return (a: SortedNote, b: SortedNote) => {
+      let comparison = 0;
+      
+      switch (field) {
+        case 'title':
+          comparison = a.title.localeCompare(b.title);
+          break;
+        case 'views':
+          comparison = a.views - b.views;
+          break;
+        case 'commentCount':
+          comparison = a.commentCount - b.commentCount;
+          break;
+        case 'updatedAt':
+          comparison = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+          break;
+        case 'createdAt':
+        default:
+          comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          break;
+      }
+      
+      return order === 'desc' ? -comparison : comparison;
+    };
+  }
+
+  private getSortAlgorithm(algo: SortAlgorithm) {
+    switch (algo) {
+      case 'merge':
+        return this.mergeSort;
+      case 'quick':
+        return this.quickSort;
+      case 'bubble':
+        return this.bubbleSort;
+      case 'mongo':
+      default:
+        return null;
+    }
+  }
 
   async create(createNoteDto: CreateNoteDto): Promise<NoteDetail> {
     const note = await this.notesModel.create({
@@ -28,7 +75,7 @@ export class NotesService {
     return this.toNoteDetail(note);
   }
 
-  async findAll(tag?: string, search?: string, sort: SortOption = 'newest'): Promise<NoteListItem[]> {
+  async findAll(tag?: string, search?: string, sort: SortOption = 'newest', algorithm: SortAlgorithm = 'merge'): Promise<NoteListItem[]> {
     const filter: any = {};
 
     if (tag) {
@@ -43,18 +90,70 @@ export class NotesService {
       ];
     }
 
-    const sortMap: Record<SortOption, any> = {
-      newest: { createdAt: -1 },
-      oldest: { createdAt: 1 },
-      alpha: { title: 1 }
+    // Fetch all notes
+    let notes = await this.notesModel.find(filter).exec();
+
+    // If using MongoDB native sort
+    if (algorithm === 'mongo') {
+      const sortMap: Record<SortOption, any> = {
+        newest: { createdAt: -1 },
+        oldest: { createdAt: 1 },
+        alpha: { title: 1 },
+        views: { views: -1 },
+        comments: { 'comments.length': -1 },
+      };
+      notes = await this.notesModel.find(filter).sort(sortMap[sort] || { createdAt: -1 }).exec();
+      return notes.map((note) => this.toNoteListItem(note));
+    }
+
+    // Map to SortedNote for custom sorting
+    const sortedNotes: SortedNote[] = notes.map(note => {
+      const plain = note.toObject();
+      return {
+        id: plain._id.toString(),
+        title: plain.title,
+        content: plain.content,
+        tags: plain.tags || [],
+        createdAt: plain.createdAt,
+        updatedAt: plain.updatedAt,
+        commentCount: plain.comments?.length || 0,
+        views: plain.views || 0,
+      };
+    });
+
+    // Convert sort option to field and order
+    const sortConfig = this.getSortConfig(sort);
+    const compareFn = this.getCompareFunction(sortConfig.field, sortConfig.order);
+
+    // Use selected sorting algorithm
+    const sorter = this.getSortAlgorithm(algorithm);
+    if (!sorter) {
+      throw new Error('Invalid sort algorithm');
+    }
+
+    const sortedData = sorter.sort(sortedNotes, compareFn);
+
+    return sortedData.map(note => ({
+      id: note.id,
+      title: note.title,
+      content: note.content,
+      tags: note.tags,
+      createdAt: note.createdAt,
+      updatedAt: note.updatedAt,
+      commentCount: note.commentCount,
+      views: note.views,
+    }));
+  }
+
+  private getSortConfig(sort: SortOption): { field: SortField; order: SortOrder } {
+    const config: Record<SortOption, { field: SortField; order: SortOrder }> = {
+      newest: { field: 'createdAt', order: 'desc' },
+      oldest: { field: 'createdAt', order: 'asc' },
+      alpha: { field: 'title', order: 'asc' },
+      views: { field: 'views', order: 'desc' },
+      comments: { field: 'commentCount', order: 'desc' },
     };
-
-    const notes = await this.notesModel
-      .find(filter)
-      .sort(sortMap[sort])
-      .exec();
-
-    return notes.map((note) => this.toNoteListItem(note));
+    return config[sort] || { field: 'createdAt', order: 'desc' };
   }
 
   async findOne(id: string): Promise<NoteDetail> {

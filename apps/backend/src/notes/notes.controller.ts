@@ -47,6 +47,7 @@ export class NotesController {
       findAllNotesDto.tag,
       findAllNotesDto.search,
       findAllNotesDto.sort,
+      findAllNotesDto.algorithm,
     );
   }
 

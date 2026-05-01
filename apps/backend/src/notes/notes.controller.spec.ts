@@ -83,7 +83,7 @@ describe('NotesController (unit)', () => {
       const result = await controller.findAll({});
 
       expect(result).toEqual(mockList);
-      expect(service.findAll).toHaveBeenCalledWith(undefined, undefined, undefined);
+      expect(service.findAll).toHaveBeenCalledWith(undefined, undefined, undefined, undefined);
       expect(service.findAll).toHaveBeenCalledTimes(1);
     });
 
@@ -94,7 +94,7 @@ describe('NotesController (unit)', () => {
 
       expect(result).toEqual([]);
       expect(Array.isArray(result)).toBe(true);
-      expect(service.findAll).toHaveBeenCalledWith(undefined, undefined, undefined);
+      expect(service.findAll).toHaveBeenCalledWith(undefined, undefined, undefined, undefined);
     });
 
     it('should call service with tag parameter when provided', async () => {
@@ -103,7 +103,7 @@ describe('NotesController (unit)', () => {
 
       await controller.findAll({ tag });
 
-      expect(service.findAll).toHaveBeenCalledWith(tag, undefined, undefined);
+      expect(service.findAll).toHaveBeenCalledWith(tag, undefined, undefined, undefined);
     });
 
     it('should call service with search parameter when provided', async () => {
@@ -112,7 +112,7 @@ describe('NotesController (unit)', () => {
 
       await controller.findAll({ search });
 
-      expect(service.findAll).toHaveBeenCalledWith(undefined, search, undefined);
+      expect(service.findAll).toHaveBeenCalledWith(undefined, search, undefined, undefined);
     });
 
     it('should call service with both tag and search parameters when provided', async () => {
@@ -122,7 +122,7 @@ describe('NotesController (unit)', () => {
 
       await controller.findAll({ tag, search });
 
-      expect(service.findAll).toHaveBeenCalledWith(tag, search, undefined);
+      expect(service.findAll).toHaveBeenCalledWith(tag, search, undefined, undefined);
     });
 
     it('should call service with sort parameter when provided', async () => {
@@ -132,7 +132,16 @@ describe('NotesController (unit)', () => {
 
       await controller.findAll({ tag, sort });
 
-      expect(service.findAll).toHaveBeenCalledWith(tag, undefined, 'alpha');
+      expect(service.findAll).toHaveBeenCalledWith(tag, undefined, 'alpha', undefined);
+    });
+
+    it('should call service with algorithm parameter when provided', async () => {
+      const algorithm = 'quick';
+      mockNotesService.findAll.mockResolvedValue([]);
+
+      await controller.findAll({ algorithm });
+
+      expect(service.findAll).toHaveBeenCalledWith(undefined, undefined, undefined, 'quick');
     });
   });
 
