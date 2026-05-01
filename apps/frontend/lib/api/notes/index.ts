@@ -1,5 +1,5 @@
 import { api } from "../../api";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   NoteListItem,
   NoteDetail,
@@ -23,12 +23,59 @@ export const notesApi = {
 
 // tanstack query hooks
 
-const useNotes = () => {
+export const useNotes = () => {
   return useQuery({
     queryKey: ["notes"],
     queryFn: notesApi.getAll,
     select: (response) => response.data || [],
+    retry: 2,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnWindowFocus: false,
   });
 };
 
-export { useNotes };
+export const useNote = (id: string) => {
+  return useQuery({
+    queryKey: ["notes", id],
+    queryFn: () => notesApi.getById(id),
+    select: (response) => response.data,
+    enabled: !!id,
+  });
+};
+
+export const useCreateNote = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: notesApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
+    },
+  });
+};
+
+export const useUpdateNote = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateNoteInput }) =>
+      notesApi.update(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
+      queryClient.invalidateQueries({ queryKey: ["notes", variables.id] });
+    },
+  });
+};
+
+export const useDeleteNote = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: notesApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
+    },
+  });
+};
+
+export * from "./types";

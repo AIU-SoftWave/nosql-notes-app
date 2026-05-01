@@ -24,13 +24,18 @@ async function request<T>(
       headers,
     });
 
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
     const data: ApiResponse<T> = await response.json();
     return data;
   } catch (error) {
     console.error("API request failed:", error);
     return {
       success: false,
-      message: "Network error occurred",
+      message:
+        error instanceof Error ? error.message : "Network error occurred",
     };
   }
 }
