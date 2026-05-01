@@ -29,6 +29,10 @@ export class Note {
   @Prop({ type: [CommentSchema], default: [] })
   comments!: Comment[];
 
+  @ApiProperty({ example: 42 })
+  @Prop({ default: 0 })
+  views!: number;
+
   @ApiProperty({ example: '2026-04-30T12:00:00.000Z' })
   createdAt!: Date;
 
@@ -37,3 +41,7 @@ export class Note {
 }
 
 export const NoteSchema = SchemaFactory.createForClass(Note);
+
+NoteSchema.index({ title: 'text', content: 'text' });
+NoteSchema.index({ tags: 1 });
+NoteSchema.index({ createdAt: -1 });

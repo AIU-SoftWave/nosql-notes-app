@@ -29,6 +29,7 @@ import { FindAllNotesDto } from './dto/findAll.dto';
 @Controller('notes')
 export class NotesController {
   constructor(private readonly notesService: NotesService) {}
+
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a note' })
@@ -45,7 +46,23 @@ export class NotesController {
     return this.notesService.findAll(
       findAllNotesDto.tag,
       findAllNotesDto.search,
+      findAllNotesDto.sort,
     );
+  }
+
+  @Get('stats')
+  @ApiOperation({ summary: 'Get statistics about notes' })
+  @ApiOkResponse({ description: 'Statistics about all notes.' })
+  getStats() {
+    return this.notesService.getStats();
+  }
+
+  @Get('activity')
+  @ApiOperation({ summary: 'Get recent activity feed' })
+  @ApiOkResponse({ description: 'Recent notes and comments activity.' })
+  getActivity(@Query('limit') limit?: string) {
+    const parsedLimit = limit ? parseInt(limit, 10) : 10;
+    return this.notesService.getActivity(parsedLimit);
   }
 
   @Get(':id')
@@ -65,6 +82,7 @@ export class NotesController {
   addComment(@Param('id') id: string, @Body() createCommentDto: CreateCommentDto) {
     return this.notesService.addComment(id, createCommentDto);
   }
+
   @Put(':id')
   @ApiOperation({ summary: 'Update a note' })
   @ApiParam({ name: 'id', description: 'Note id' })

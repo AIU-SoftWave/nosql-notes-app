@@ -27,6 +27,7 @@
 - **Normalization vs. Aggregation:** Explain the shift from 3NF (SQL) to Aggregated Documents (NoSQL).
 - **Embedded Comments:** Why O(1) retrieval beats O(log n) JOINs.
 - **Atomic Updates:** How we use MongoDB's array operators (`$push`, `$pull`) for tags.
+- **Text Indexes:** Full-text search on `title` and `content` for high-performance text search.
 
 ## Slide 5: Architectural Overview (Full Stack)
 
@@ -35,6 +36,10 @@
 - **Backend:** NestJS (Node.js) providing a unified API layer.
 - **Database:** MongoDB (The NoSQL Core).
 - **Orchestration:** Docker Compose for reproducible environments.
+- **New Features:**
+  - Stats Dashboard (`/stats`) showing totals
+  - Activity Feed showing recent notes/comments
+  - Sortable lists (newest/oldest/alpha)
 
 ## Slide 6: Data Flow: From UI to Document
 
@@ -48,12 +53,17 @@
 - **Data Consistency:** How we use Mongoose Schemas to enforce application-level validation.
 - **Concurrency:** Utilizing MongoDB's `__v` version key for optimistic locking.
 - **Search Performance:** Implementation of Multikey and Compound Indexes to prevent full-collection scans.
+- **View Tracking:** Using MongoDB's atomic `$inc` operator to increment view counts in real-time.
+- **Statistics:** Leveraging MongoDB Aggregation Pipelines for computing stats without application-side processing.
 
 ## Slide 8: Technical Implementation (CRUD)
 
 - **Create:** Validating dynamic BSON documents.
 - **Read:** Combining Tag Filtering with Regex-based text search.
 - **Update/Delete:** Maintaining referential integrity without foreign key constraints.
+- **Sorting:** Multiple sort options (newest, oldest, alphabetical) using MongoDB's `sort()`.
+- **Statistics:** Dedicated `/stats` endpoint using Aggregation Pipeline.
+- **Activity Feed:** Real-time activity tracking with `$unionWith` for cross-collection queries.
 
 ## Slide 9: From Simple App to Massive Scale
 
@@ -62,6 +72,8 @@
   - **Horizontal Sharding:** Distributing data across thousands of nodes without application changes.
   - **Low Latency:** High-velocity writes (autosaves) don't lock the whole table like SQL.
   - **Global Distribution:** Native replication across different geographic regions.
+  - **Atomic Counters:** Real-time view counting using `$inc` without race conditions.
+  - **Aggregation Pipeline:** Server-side analytics that scale with data volume.
 - **Key Takeaway:** By choosing NoSQL today, our architecture is "Future-Proof" for millions of users.
 
 ## Slide 10: Conclusion & Future Work

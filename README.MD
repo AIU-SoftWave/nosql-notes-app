@@ -11,8 +11,11 @@ The project focuses on highlighting the advantages of NoSQL over traditional rel
 * Create, read, update, and delete notes
 * Add comments to notes
 * Assign tags to notes
-* Track note views and activity
-* Search and filter notes by tags
+* **Track note views** with atomic increment ($inc)
+* **Filter by tags** and search by title/content
+* **Sort notes** by newest, oldest, or alphabetically
+* **Statistics dashboard** showing total notes, comments, views, and top tags
+* **Activity feed** showing recent notes and comments
 
 ## Tech Stack
 

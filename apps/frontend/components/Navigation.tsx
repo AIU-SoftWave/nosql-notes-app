@@ -18,6 +18,12 @@ export default function Navigation() {
               Notes
             </Link>
             <Link
+              href="/stats"
+              className="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+            >
+              Stats
+            </Link>
+            <Link
               href="/notes/new"
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
             >

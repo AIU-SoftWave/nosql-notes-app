@@ -44,7 +44,9 @@ We utilize a **Document-based model**. Unlike a relational database where tags o
   "comments": [
     { "content": "Great summary!", "createdAt": "ISO-Date" }
   ],
-  "createdAt": "ISO-Date"
+  "views": 42,
+  "createdAt": "ISO-Date",
+  "updatedAt": "ISO-Date"
 }
 ```
 
@@ -52,13 +54,20 @@ We utilize a **Document-based model**. Unlike a relational database where tags o
 The application implements all core CRUD operations via the NestJS Mongoose module:
 - **Create:** `POST /api/notes` - Stores a new document with dynamic tags.
 - **Read:** `GET /api/notes` - Supports complex filtering using regex for search and array-matching for tags.
+- **Read with Sort:** `GET /api/notes?sort=newest|oldest|alpha` - Sort notes by creation date or title.
+- **Read Single:** `GET /api/notes/:id` - Retrieves a note (increments view count atomically).
 - **Update:** `PATCH /api/notes/:id` - Updates specific fields without overwriting the entire document.
 - **Delete:** `DELETE /api/notes/:id` - Removes the document and its sub-resources.
+- **Comments:** `POST /api/notes/:id/comments` - Adds comments to a note.
+- **Statistics:** `GET /api/notes/stats` - Returns total notes, comments, views, and top tags using MongoDB Aggregation Pipeline.
+- **Activity Feed:** `GET /api/notes/activity?limit=10` - Returns recent notes and comments for real-time activity tracking.
 
 ## 6. Challenges & Solutions
 - **Data Consistency:** Used Mongoose Schemas to enforce validation at the application level while maintaining NoSQL flexibility.
 - **Concurrency:** Leveraged MongoDB's optimistic concurrency control (version keys).
 - **Scalability:** Implemented indexed search on `title` and `content` to optimize query performance as the dataset grows.
+- **View Tracking:** Implemented atomic view counting using MongoDB's `$inc` operator - impossible in SQL without row locking.
+- **Analytics:** Used MongoDB Aggregation Pipeline to compute statistics server-side, reducing application-side processing.
 
 ## 7. Running the Project
 ### Prerequisites:

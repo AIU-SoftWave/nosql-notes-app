@@ -11,4 +11,9 @@ export class FindAllNotesDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @ApiPropertyOptional({ enum: ['newest', 'oldest', 'alpha'], default: 'newest' })
+  @IsOptional()
+  @IsString()
+  sort?: 'newest' | 'oldest' | 'alpha';
 }

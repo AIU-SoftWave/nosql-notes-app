@@ -46,7 +46,8 @@ The application leverages a three-tier architecture optimized for asynchronous d
 ### Tier 3: Data (MongoDB)
 
 - **Model:** Document-based storage.
-- **Indexing:** Multikey indexes on `tags` and text indexes on `title`/`content` for high-performance searching.
+- **Indexing:** Multikey indexes on `tags`, text indexes on `title`/`content` for high-performance searching.
+- **Aggregation:** MongoDB Aggregation Pipeline for computing statistics server-side.
 - **Concurrency:** Optimistic locking via version keys (`__v`).
 
 ## 4. Implementation Objectives Met

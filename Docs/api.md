@@ -39,11 +39,20 @@ Body:
 
 GET /api/notes
 
+Query Parameters:
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| tag | string | Filter by tag (case-insensitive) |
+| search | string | Search in title/content (min 2 chars) |
+| sort | string | Sort: `newest` (default), `oldest`, `alpha` |
+
 ---
 
 ### 3. Get Note by ID
 
 GET /api/notes/:id
+
+**Automatic View Tracking:** This endpoint automatically increments the view count using MongoDB's atomic `$inc` operator.
 
 ---
 
@@ -67,16 +76,46 @@ Body:
 
 ```json
 {
-  "user": "string",
-  "text": "string"
+  "content": "string"
 }
 ```
 
 ---
 
-### 7. Increment Views
+### 7. Get Statistics
 
-PATCH /api/notes/:id/view
+GET /api/notes/stats
+
+Returns aggregated statistics using MongoDB Aggregation Pipeline.
+
+Response:
+```json
+{
+  "totalNotes": 42,
+  "totalComments": 128,
+  "totalViews": 1024,
+  "tags": [
+    { "tag": "work", "count": 15 },
+    { "tag": "research", "count": 10 }
+  ]
+}
+```
+
+---
+
+### 8. Get Activity Feed
+
+GET /api/notes/activity?limit=10
+
+Returns recent notes and comments sorted by creation date.
+
+Response:
+```json
+[
+  { "type": "note", "noteId": "...", "title": "...", "createdAt": "..." },
+  { "type": "comment", "noteId": "...", "title": "...", "createdAt": "..." }
+]
+```
 
 ---
 
@@ -109,4 +148,6 @@ PATCH /api/notes/:id/view
 
 ## Notes
 - All endpoints are stateless and require no authentication (for demo version).
+- View counting is automatic via atomic `$inc` - no race conditions.
+- Statistics computed server-side via MongoDB Aggregation Pipeline.
 - Extend with authentication and authorization as needed for production.

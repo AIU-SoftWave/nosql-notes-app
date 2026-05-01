@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import NoteCard from "@/components/NoteCard";
 import Loading from "@/components/Loading";
-import { useNotes } from "@/lib/api/notes";
+import { useNotes, SortOption } from "@/lib/api/notes";
 
 function TagFilter({
   tags,
@@ -56,8 +56,10 @@ function NotesList() {
 
   const activeTag = searchParams.get("tag");
   const urlSearch = searchParams.get("search") || "";
+  const urlSort = (searchParams.get("sort") as SortOption) || "newest";
 
   const [searchInput, setSearchInput] = useState(urlSearch);
+  const [sortOption, setSortOption] = useState<SortOption>(urlSort);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const handleSearch = (e?: React.FormEvent) => {
@@ -77,7 +79,14 @@ function NotesList() {
     data: notes = [],
     isLoading,
     error,
-  } = useNotes(activeTag || undefined, urlSearch || undefined);
+  } = useNotes(activeTag || undefined, urlSearch || undefined, urlSort);
+
+  const handleSortChange = (newSort: SortOption) => {
+    setSortOption(newSort);
+    const params = new URLSearchParams(searchParams);
+    params.set("sort", newSort);
+    router.push(`/notes?${params.toString()}`, { scroll: false });
+  };
 
   const handleTagClick = (tag: string) => {
     const params = new URLSearchParams(searchParams);
@@ -173,6 +182,15 @@ function NotesList() {
                 </button>
               )}
             </div>
+            <select
+              value={sortOption}
+              onChange={(e) => handleSortChange(e.target.value as SortOption)}
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="alpha">A-Z</option>
+            </select>
             <button
               type="submit"
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium transition-colors"

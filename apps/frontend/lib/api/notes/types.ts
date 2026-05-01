@@ -6,6 +6,7 @@ export interface NoteListItem {
   createdAt: string;
   updatedAt: string;
   commentCount: number;
+  views: number;
 }
 
 export interface NoteDetail {
@@ -16,6 +17,7 @@ export interface NoteDetail {
   comments: Comment[];
   createdAt: string;
   updatedAt: string;
+  views: number;
 }
 
 export interface Comment {
@@ -40,3 +42,19 @@ export interface UpdateNoteInput {
 export interface DeleteNoteResult {
   message: string;
 }
+
+export interface NoteStats {
+  totalNotes: number;
+  totalComments: number;
+  totalViews: number;
+  tags: { tag: string; count: number }[];
+}
+
+export interface ActivityItem {
+  type: 'note' | 'comment';
+  noteId: string;
+  title: string;
+  createdAt: string;
+}
+
+export type SortOption = 'newest' | 'oldest' | 'alpha';

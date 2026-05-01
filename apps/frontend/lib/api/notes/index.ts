@@ -6,13 +6,17 @@ import {
   CreateNoteInput,
   UpdateNoteInput,
   DeleteNoteResult,
+  NoteStats,
+  ActivityItem,
+  SortOption,
 } from "./types";
 
 export const notesApi = {
-  getAll: (tag?: string, search?: string) => {
+  getAll: (tag?: string, search?: string, sort?: SortOption) => {
     const params = new URLSearchParams();
     if (tag) params.append("tag", tag);
     if (search) params.append("search", search);
+    if (sort) params.append("sort", sort);
     const queryString = params.toString();
     return api.get<NoteListItem[]>(
       queryString ? `/notes?${queryString}` : "/notes",
@@ -30,17 +34,28 @@ export const notesApi = {
 
   addComment: (id: string, content: string) =>
     api.post<Comment>(`/notes/${id}/comments`, { content }),
+
+  getStats: () => api.get<NoteStats>("/notes/stats"),
+
+  getActivity: (limit?: number) => {
+    const params = new URLSearchParams();
+    if (limit) params.append("limit", limit.toString());
+    const queryString = params.toString();
+    return api.get<ActivityItem[]>(
+      queryString ? `/notes/activity?${queryString}` : "/notes/activity",
+    );
+  },
 };
 
 // tanstack query hooks
 
-export const useNotes = (tag?: string, search?: string) => {
+export const useNotes = (tag?: string, search?: string, sort?: SortOption) => {
   return useQuery({
-    queryKey: ["notes", tag, search],
-    queryFn: () => notesApi.getAll(tag, search),
+    queryKey: ["notes", tag, search, sort],
+    queryFn: () => notesApi.getAll(tag, search, sort),
     select: (response) => response.data || [],
     retry: 2,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
   });
 };
@@ -51,6 +66,24 @@ export const useNote = (id: string) => {
     queryFn: () => notesApi.getById(id),
     select: (response) => response.data,
     enabled: !!id,
+  });
+};
+
+export const useNoteStats = () => {
+  return useQuery({
+    queryKey: ["notes", "stats"],
+    queryFn: () => notesApi.getStats(),
+    select: (response) => response.data,
+    staleTime: 1000 * 60,
+  });
+};
+
+export const useNoteActivity = (limit?: number) => {
+  return useQuery({
+    queryKey: ["notes", "activity", limit],
+    queryFn: () => notesApi.getActivity(limit),
+    select: (response) => response.data || [],
+    staleTime: 1000 * 60,
   });
 };
 

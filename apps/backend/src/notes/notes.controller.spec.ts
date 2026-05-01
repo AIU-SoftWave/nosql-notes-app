@@ -19,6 +19,8 @@ describe('NotesController (unit)', () => {
     update: jest.fn(),
     delete: jest.fn(),
     addComment: jest.fn(),
+    getStats: jest.fn(),
+    getActivity: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -81,7 +83,7 @@ describe('NotesController (unit)', () => {
       const result = await controller.findAll({});
 
       expect(result).toEqual(mockList);
-      expect(service.findAll).toHaveBeenCalledWith(undefined, undefined);
+      expect(service.findAll).toHaveBeenCalledWith(undefined, undefined, undefined);
       expect(service.findAll).toHaveBeenCalledTimes(1);
     });
 
@@ -92,7 +94,7 @@ describe('NotesController (unit)', () => {
 
       expect(result).toEqual([]);
       expect(Array.isArray(result)).toBe(true);
-      expect(service.findAll).toHaveBeenCalledWith(undefined, undefined);
+      expect(service.findAll).toHaveBeenCalledWith(undefined, undefined, undefined);
     });
 
     it('should call service with tag parameter when provided', async () => {
@@ -101,7 +103,7 @@ describe('NotesController (unit)', () => {
 
       await controller.findAll({ tag });
 
-      expect(service.findAll).toHaveBeenCalledWith(tag, undefined);
+      expect(service.findAll).toHaveBeenCalledWith(tag, undefined, undefined);
     });
 
     it('should call service with search parameter when provided', async () => {
@@ -110,7 +112,7 @@ describe('NotesController (unit)', () => {
 
       await controller.findAll({ search });
 
-      expect(service.findAll).toHaveBeenCalledWith(undefined, search);
+      expect(service.findAll).toHaveBeenCalledWith(undefined, search, undefined);
     });
 
     it('should call service with both tag and search parameters when provided', async () => {
@@ -120,7 +122,17 @@ describe('NotesController (unit)', () => {
 
       await controller.findAll({ tag, search });
 
-      expect(service.findAll).toHaveBeenCalledWith(tag, search);
+      expect(service.findAll).toHaveBeenCalledWith(tag, search, undefined);
+    });
+
+    it('should call service with sort parameter when provided', async () => {
+      const tag = 'test';
+      const sort = 'alpha';
+      mockNotesService.findAll.mockResolvedValue([]);
+
+      await controller.findAll({ tag, sort });
+
+      expect(service.findAll).toHaveBeenCalledWith(tag, undefined, 'alpha');
     });
   });
 
