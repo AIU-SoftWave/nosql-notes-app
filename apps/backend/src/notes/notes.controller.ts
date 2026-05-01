@@ -20,6 +20,7 @@ import {
 } from '@nestjs/swagger';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
+import { CreateCommentDto } from './dto/create-comment.dto';
 import { NotesService } from './notes.service';
 import { NormalizeTagsPipe } from './pipes/normalize-tags.pipe';
 import { FindAllNotesDto } from './dto/findAll.dto';
@@ -53,6 +54,16 @@ export class NotesController {
   @ApiOkResponse({ description: 'The requested note.' })
   findOne(@Param('id') id: string) {
     return this.notesService.findOne(id);
+  }
+
+  @Post(':id/comments')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Add a comment to a note' })
+  @ApiParam({ name: 'id', description: 'Note id' })
+  @ApiBody({ type: CreateCommentDto })
+  @ApiCreatedResponse({ description: 'The comment was added successfully.' })
+  addComment(@Param('id') id: string, @Body() createCommentDto: CreateCommentDto) {
+    return this.notesService.addComment(id, createCommentDto);
   }
   @Put(':id')
   @ApiOperation({ summary: 'Update a note' })

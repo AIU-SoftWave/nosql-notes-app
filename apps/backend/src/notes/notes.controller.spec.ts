@@ -3,6 +3,8 @@ import { NotesController } from './notes.controller';
 import { NotesService } from './notes.service';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
+import { CreateCommentDto } from './dto/create-comment.dto';
+import { FindAllNotesDto } from './dto/findAll.dto';
 import { NotFoundException } from '@nestjs/common';
 import { ObjectId } from 'mongodb';
 
@@ -16,6 +18,7 @@ describe('NotesController (unit)', () => {
     findOne: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
+    addComment: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -75,7 +78,7 @@ describe('NotesController (unit)', () => {
       ];
       mockNotesService.findAll.mockResolvedValue(mockList);
 
-      const result = await controller.findAll();
+      const result = await controller.findAll({});
 
       expect(result).toEqual(mockList);
       expect(service.findAll).toHaveBeenCalledWith(undefined, undefined);
@@ -85,7 +88,7 @@ describe('NotesController (unit)', () => {
     it('should return empty list when no notes exist', async () => {
       mockNotesService.findAll.mockResolvedValue([]);
 
-      const result = await controller.findAll();
+      const result = await controller.findAll({});
 
       expect(result).toEqual([]);
       expect(Array.isArray(result)).toBe(true);
@@ -96,7 +99,7 @@ describe('NotesController (unit)', () => {
       const tag = 'test';
       mockNotesService.findAll.mockResolvedValue([]);
 
-      await controller.findAll(tag);
+      await controller.findAll({ tag });
 
       expect(service.findAll).toHaveBeenCalledWith(tag, undefined);
     });
@@ -105,7 +108,7 @@ describe('NotesController (unit)', () => {
       const search = 'test search';
       mockNotesService.findAll.mockResolvedValue([]);
 
-      await controller.findAll(undefined, search);
+      await controller.findAll({ search });
 
       expect(service.findAll).toHaveBeenCalledWith(undefined, search);
     });
@@ -115,7 +118,7 @@ describe('NotesController (unit)', () => {
       const search = 'test search';
       mockNotesService.findAll.mockResolvedValue([]);
 
-      await controller.findAll(tag, search);
+      await controller.findAll({ tag, search });
 
       expect(service.findAll).toHaveBeenCalledWith(tag, search);
     });
@@ -216,6 +219,46 @@ describe('NotesController (unit)', () => {
       mockNotesService.delete.mockRejectedValue(new Error('Delete failed'));
 
       await expect(controller.delete(mockId.toString())).rejects.toThrow('Delete failed');
+    });
+  });
+
+  describe('addComment', () => {
+    it('should add a comment to a note successfully', async () => {
+      const mockId = new ObjectId();
+      const commentDto: CreateCommentDto = { content: 'Great note!' };
+      const mockNoteWithComment = {
+        id: mockId,
+        title: 'Test Note',
+        content: 'Test Content',
+        tags: ['test'],
+        comments: [{ content: 'Great note!', createdAt: new Date() }],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      mockNotesService.addComment.mockResolvedValue(mockNoteWithComment);
+
+      const result = await controller.addComment(mockId.toString(), commentDto);
+
+      expect(result).toEqual(mockNoteWithComment);
+      expect(service.addComment).toHaveBeenCalledWith(mockId.toString(), commentDto);
+    });
+
+    it('should throw NotFoundException for invalid note id', async () => {
+      const invalidId = '123invalid';
+      const commentDto: CreateCommentDto = { content: 'Great note!' };
+      mockNotesService.addComment.mockRejectedValue(new NotFoundException('Note not found'));
+
+      await expect(controller.addComment(invalidId, commentDto)).rejects.toThrow(NotFoundException);
+      expect(service.addComment).toHaveBeenCalledWith(invalidId, commentDto);
+    });
+
+    it('should throw NotFoundException for non-existent note id', async () => {
+      const validButNonExistentId = new ObjectId().toString();
+      const commentDto: CreateCommentDto = { content: 'Great note!' };
+      mockNotesService.addComment.mockRejectedValue(new NotFoundException('Note not found'));
+
+      await expect(controller.addComment(validButNonExistentId, commentDto)).rejects.toThrow(NotFoundException);
+      expect(service.addComment).toHaveBeenCalledWith(validButNonExistentId, commentDto);
     });
   });
 });
