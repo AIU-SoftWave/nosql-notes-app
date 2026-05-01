@@ -1,0 +1,26 @@
+@startuml DataFlow
+title NoSQL Data Flow - Note Creation
+
+actor User
+participant "Next.js Frontend" as FE
+participant "NestJS Backend" as BE
+participant "Mongoose ODM" as ODM
+database "MongoDB" as DB
+
+User -> FE: Enters Title, Content, Tags
+FE -> FE: Validate Input (Min length)
+FE -> BE: POST /api/notes (JSON Payload)
+
+BE -> BE: Global Validation Pipe\n(class-validator)
+BE -> ODM: new NoteModel(data).save()
+
+group NoSQL Persistence Logic
+    ODM -> DB: BSON Document Insert
+    note right of DB: Dynamic Schema:\nNo pre-defined columns\nneeded for Tags array
+    DB --> ODM: Success (with _id)
+end
+
+ODM --> BE: Document Instance
+BE --> FE: 201 Created (JSON Document)
+FE -> User: Update UI via TanStack Query
+@enduml
