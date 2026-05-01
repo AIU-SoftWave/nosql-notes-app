@@ -80,3 +80,28 @@ export interface SortAlgorithmInfo {
   name: string;
   metrics: SortMetrics;
 }
+
+export interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+export interface PerformanceMetrics {
+  algorithmId: string;
+  algorithmName: string;
+  executionTimeMs: number;
+  dataSize: number;
+  timeComplexity: string;
+  spaceComplexity: string;
+  stable: boolean;
+}
+
+export interface NotesResponse {
+  data: NoteListItem[];
+  pagination: PaginationInfo;
+  performance: PerformanceMetrics;
+}

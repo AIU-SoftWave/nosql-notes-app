@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
 import { NotesModule } from './notes/notes.module';
 import { SortModule } from './sort/sort.module';
+import { SeedModule } from './seed/seed.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { SortModule } from './sort/sort.module';
     DatabaseModule.forRoot(),
     NotesModule,
     SortModule,
+    SeedModule,
   ],
   controllers: [AppController],
   providers: [AppService],

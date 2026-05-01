@@ -35,16 +35,44 @@ Body:
 
 ---
 
-### 2. Get All Notes
+### 2. Get All Notes (with Pagination & Sorting)
 
 GET /api/notes
 
 Query Parameters:
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| tag | string | Filter by tag (case-insensitive) |
-| search | string | Search in title/content (min 2 chars) |
-| sort | string | Sort: `newest` (default), `oldest`, `alpha` |
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| tag | string | - | Filter by tag (case-insensitive) |
+| search | string | - | Search in title/content (min 2 chars) |
+| sort | string | newest | Sort: `newest`, `oldest`, `alpha`, `views`, `comments` |
+| algorithm | string | merge | Sort algorithm: `merge`, `quick`, `bubble`, `mongo` |
+| page | number | 1 | Page number |
+| limit | number | 10 | Items per page (max 100) |
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [...],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 100,
+    "totalPages": 10,
+    "hasNext": true,
+    "hasPrev": false
+  },
+  "performance": {
+    "algorithmId": "merge",
+    "algorithmName": "Merge Sort",
+    "executionTimeMs": 12.5,
+    "dataSize": 100,
+    "timeComplexity": "O(n log n)",
+    "spaceComplexity": "O(n)",
+    "stable": true
+  }
+}
+```
 
 ---
 
@@ -119,6 +147,99 @@ Response:
 
 ---
 
+### 9. Get Sort Algorithms
+
+GET /api/sort/algorithms
+
+Returns all available sorting algorithms with their metrics.
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "algorithms": [
+      {
+        "id": "merge",
+        "name": "Merge Sort",
+        "metrics": {
+          "algorithmId": "merge",
+          "name": "Merge Sort",
+          "description": "Efficient, stable divide-and-conquer...",
+          "timeComplexity": { "best": "O(n log n)", "average": "O(n log n)", "worst": "O(n log n)" },
+          "spaceComplexity": "O(n)",
+          "stable": true,
+          "category": "divide-conquer"
+        }
+      },
+      ...
+    ]
+  }
+}
+```
+
+---
+
+### 10. Seed Database
+
+POST /api/seed/notes/:count
+
+Seed the database with random notes (max 10000).
+
+Response:
+```json
+{
+  "success": true,
+  "count": 100,
+  "message": "Successfully seeded 100 notes"
+}
+```
+
+---
+
+### 11. Clear Database
+
+POST /api/seed/clear
+
+Delete all notes from the database.
+
+Response:
+```json
+{
+  "success": true,
+  "count": 50
+}
+```
+
+---
+
+### 12. Get Note Count
+
+GET /api/seed/count
+
+Returns the total number of notes.
+
+Response:
+```json
+{
+  "success": true,
+  "count": 100
+}
+```
+
+---
+
+## Sorting Algorithms
+
+| Algorithm | Time Complexity | Space Complexity | Stable |
+|-----------|----------------|-----------------|--------|
+| Merge Sort | O(n log n) | O(n) | Yes |
+| Quick Sort | O(n log n) avg | O(log n) | No |
+| Bubble Sort | O(n²) | O(1) | Yes |
+| MongoDB Native | O(log n) | O(1) | Yes |
+
+---
+
 ## Response Format
 
 ```json
@@ -150,4 +271,5 @@ Response:
 - All endpoints are stateless and require no authentication (for demo version).
 - View counting is automatic via atomic `$inc` - no race conditions.
 - Statistics computed server-side via MongoDB Aggregation Pipeline.
+- Seed endpoint generates random notes with realistic content for testing.
 - Extend with authentication and authorization as needed for production.

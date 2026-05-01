@@ -73,75 +73,88 @@ describe('NotesController (unit)', () => {
   });
 
   describe('findAll', () => {
+    const mockResponse = {
+      data: [
+        { id: new ObjectId(), title: 'Note 1', content: 'Content 1', tags: [], commentCount: 0, views: 0, createdAt: new Date(), updatedAt: new Date() },
+        { id: new ObjectId(), title: 'Note 2', content: 'Content 2', tags: ['tag1'], commentCount: 2, views: 0, createdAt: new Date(), updatedAt: new Date() },
+      ],
+      pagination: { page: 1, limit: 10, total: 2, totalPages: 1, hasNext: false, hasPrev: false },
+      performance: { algorithmId: 'merge', algorithmName: 'Merge Sort', executionTimeMs: 1.5, dataSize: 2, timeComplexity: 'O(n log n)', spaceComplexity: 'O(n)', stable: true },
+    };
+
     it('should return list of notes without comments', async () => {
-      const mockList = [
-        { id: new ObjectId(), title: 'Note 1', content: 'Content 1', tags: [], commentCount: 0 },
-        { id: new ObjectId(), title: 'Note 2', content: 'Content 2', tags: ['tag1'], commentCount: 2 },
-      ];
-      mockNotesService.findAll.mockResolvedValue(mockList);
+      mockNotesService.findAll.mockResolvedValue(mockResponse);
 
       const result = await controller.findAll({});
 
-      expect(result).toEqual(mockList);
-      expect(service.findAll).toHaveBeenCalledWith(undefined, undefined, undefined, undefined);
+      expect(result).toEqual(mockResponse);
+      expect(service.findAll).toHaveBeenCalledWith(undefined, undefined, undefined, undefined, 1, 10);
       expect(service.findAll).toHaveBeenCalledTimes(1);
     });
 
     it('should return empty list when no notes exist', async () => {
-      mockNotesService.findAll.mockResolvedValue([]);
+      const emptyResponse = { data: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0, hasNext: false, hasPrev: false }, performance: mockResponse.performance };
+      mockNotesService.findAll.mockResolvedValue(emptyResponse);
 
       const result = await controller.findAll({});
 
-      expect(result).toEqual([]);
-      expect(Array.isArray(result)).toBe(true);
-      expect(service.findAll).toHaveBeenCalledWith(undefined, undefined, undefined, undefined);
+      expect(result.data).toEqual([]);
+      expect(service.findAll).toHaveBeenCalledWith(undefined, undefined, undefined, undefined, 1, 10);
     });
 
     it('should call service with tag parameter when provided', async () => {
       const tag = 'test';
-      mockNotesService.findAll.mockResolvedValue([]);
+      mockNotesService.findAll.mockResolvedValue(mockResponse);
 
       await controller.findAll({ tag });
 
-      expect(service.findAll).toHaveBeenCalledWith(tag, undefined, undefined, undefined);
+      expect(service.findAll).toHaveBeenCalledWith(tag, undefined, undefined, undefined, 1, 10);
     });
 
     it('should call service with search parameter when provided', async () => {
       const search = 'test search';
-      mockNotesService.findAll.mockResolvedValue([]);
+      mockNotesService.findAll.mockResolvedValue(mockResponse);
 
       await controller.findAll({ search });
 
-      expect(service.findAll).toHaveBeenCalledWith(undefined, search, undefined, undefined);
+      expect(service.findAll).toHaveBeenCalledWith(undefined, search, undefined, undefined, 1, 10);
     });
 
     it('should call service with both tag and search parameters when provided', async () => {
       const tag = 'test';
       const search = 'test search';
-      mockNotesService.findAll.mockResolvedValue([]);
+      mockNotesService.findAll.mockResolvedValue(mockResponse);
 
       await controller.findAll({ tag, search });
 
-      expect(service.findAll).toHaveBeenCalledWith(tag, search, undefined, undefined);
+      expect(service.findAll).toHaveBeenCalledWith(tag, search, undefined, undefined, 1, 10);
     });
 
     it('should call service with sort parameter when provided', async () => {
       const tag = 'test';
       const sort = 'alpha';
-      mockNotesService.findAll.mockResolvedValue([]);
+      mockNotesService.findAll.mockResolvedValue(mockResponse);
 
       await controller.findAll({ tag, sort });
 
-      expect(service.findAll).toHaveBeenCalledWith(tag, undefined, 'alpha', undefined);
+      expect(service.findAll).toHaveBeenCalledWith(tag, undefined, 'alpha', undefined, 1, 10);
     });
 
     it('should call service with algorithm parameter when provided', async () => {
       const algorithm = 'quick';
-      mockNotesService.findAll.mockResolvedValue([]);
+      mockNotesService.findAll.mockResolvedValue(mockResponse);
 
       await controller.findAll({ algorithm });
 
-      expect(service.findAll).toHaveBeenCalledWith(undefined, undefined, undefined, 'quick');
+      expect(service.findAll).toHaveBeenCalledWith(undefined, undefined, undefined, 'quick', 1, 10);
+    });
+
+    it('should call service with pagination parameters when provided', async () => {
+      mockNotesService.findAll.mockResolvedValue(mockResponse);
+
+      await controller.findAll({ page: 2, limit: 25 });
+
+      expect(service.findAll).toHaveBeenCalledWith(undefined, undefined, undefined, undefined, 2, 25);
     });
   });
 

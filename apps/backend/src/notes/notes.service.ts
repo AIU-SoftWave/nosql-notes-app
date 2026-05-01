@@ -5,8 +5,9 @@ import { Note, NoteDocument } from '../entities/note.entity';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
-import type { DeleteNoteResult, NoteDetail, NoteListItem, NoteStats, ActivityItem } from './notes.types';
+import type { DeleteNoteResult, NoteDetail, NoteListItem, NoteStats, ActivityItem, NotesResponse, PerformanceMetrics, PaginationInfo } from './notes.types';
 import { SortField, SortOrder, SortedNote, createMergeSort, createQuickSort, createBubbleSort } from '../utils';
+import { calculatePerformance } from '../utils/performance-metrics';
 
 export type SortOption = 'newest' | 'oldest' | 'alpha' | 'views' | 'comments';
 export type SortAlgorithm = 'merge' | 'quick' | 'bubble' | 'mongo';
@@ -75,7 +76,14 @@ export class NotesService {
     return this.toNoteDetail(note);
   }
 
-  async findAll(tag?: string, search?: string, sort: SortOption = 'newest', algorithm: SortAlgorithm = 'merge'): Promise<NoteListItem[]> {
+  async findAll(
+    tag?: string,
+    search?: string,
+    sort: SortOption = 'newest',
+    algorithm: SortAlgorithm = 'merge',
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<NotesResponse> {
     const filter: any = {};
 
     if (tag) {
@@ -90,8 +98,15 @@ export class NotesService {
       ];
     }
 
-    // Fetch all notes
-    let notes = await this.notesModel.find(filter).exec();
+    const startTime = process.hrtime.bigint();
+    const total = await this.notesModel.countDocuments(filter);
+    
+    // Fetch notes with pagination
+    let notes = await this.notesModel
+      .find(filter)
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .exec();
 
     // If using MongoDB native sort
     if (algorithm === 'mongo') {
@@ -102,12 +117,23 @@ export class NotesService {
         views: { views: -1 },
         comments: { 'comments.length': -1 },
       };
-      notes = await this.notesModel.find(filter).sort(sortMap[sort] || { createdAt: -1 }).exec();
-      return notes.map((note) => this.toNoteListItem(note));
+      notes = await this.notesModel
+        .find(filter)
+        .sort(sortMap[sort] || { createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .exec();
+      
+      const performance = calculatePerformance('mongo', 'MongoDB Native', startTime, total);
+      
+      return this.buildResponse(notes, page, limit, total, performance);
     }
 
+    // Fetch all for custom sorting (no pagination for custom sorts as they need all data)
+    const allNotes = await this.notesModel.find(filter).exec();
+
     // Map to SortedNote for custom sorting
-    const sortedNotes: SortedNote[] = notes.map(note => {
+    const sortedNotes: SortedNote[] = allNotes.map(note => {
       const plain = note.toObject();
       return {
         id: plain._id.toString(),
@@ -133,7 +159,24 @@ export class NotesService {
 
     const sortedData = sorter.sort(sortedNotes, compareFn);
 
-    return sortedData.map(note => ({
+    // Apply pagination after sorting
+    const paginatedData = sortedData.slice((page - 1) * limit, page * limit);
+
+    const algorithmNameMap: Record<SortAlgorithm, string> = {
+      merge: 'Merge Sort',
+      quick: 'Quick Sort',
+      bubble: 'Bubble Sort',
+      mongo: 'MongoDB Native',
+    };
+
+    const performance = calculatePerformance(
+      algorithm,
+      algorithmNameMap[algorithm],
+      startTime,
+      total,
+    );
+
+    const noteItems = paginatedData.map(note => ({
       id: note.id,
       title: note.title,
       content: note.content,
@@ -143,6 +186,56 @@ export class NotesService {
       commentCount: note.commentCount,
       views: note.views,
     }));
+
+    return this.buildResponseFromItems(noteItems, page, limit, total, performance);
+  }
+
+  private buildResponse(
+    notes: NoteDocument[],
+    page: number,
+    limit: number,
+    total: number,
+    performance: PerformanceMetrics,
+  ): NotesResponse {
+    const totalPages = Math.ceil(total / limit);
+    const pagination: PaginationInfo = {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
+    };
+
+    return {
+      data: notes.map(note => this.toNoteListItem(note)),
+      pagination,
+      performance,
+    };
+  }
+
+  private buildResponseFromItems(
+    notes: NoteListItem[],
+    page: number,
+    limit: number,
+    total: number,
+    performance: PerformanceMetrics,
+  ): NotesResponse {
+    const totalPages = Math.ceil(total / limit);
+    const pagination: PaginationInfo = {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
+    };
+
+    return {
+      data: notes,
+      pagination,
+      performance,
+    };
   }
 
   private getSortConfig(sort: SortOption): { field: SortField; order: SortOrder } {

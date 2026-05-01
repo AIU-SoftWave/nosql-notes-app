@@ -40,14 +40,19 @@ export class NotesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all notes' })
-  @ApiOkResponse({ description: 'A list of notes.' })
+  @ApiOperation({ summary: 'Get notes with pagination and performance metrics' })
+  @ApiOkResponse({ description: 'A list of notes with pagination.' })
   findAll(@Query() findAllNotesDto: FindAllNotesDto) {
+    const page = findAllNotesDto.page ?? 1;
+    const limit = findAllNotesDto.limit ?? 10;
+    
     return this.notesService.findAll(
       findAllNotesDto.tag,
       findAllNotesDto.search,
       findAllNotesDto.sort,
       findAllNotesDto.algorithm,
+      page,
+      limit,
     );
   }
 

@@ -11,17 +11,27 @@ import {
   SortOption,
   SortAlgorithm,
   SortAlgorithmInfo,
+  NotesResponse,
 } from "./types";
 
 export const notesApi = {
-  getAll: (tag?: string, search?: string, sort?: SortOption, algorithm?: SortAlgorithm) => {
+  getAll: (
+    tag?: string,
+    search?: string,
+    sort?: SortOption,
+    algorithm?: SortAlgorithm,
+    page?: number,
+    limit?: number,
+  ) => {
     const params = new URLSearchParams();
     if (tag) params.append("tag", tag);
     if (search) params.append("search", search);
     if (sort) params.append("sort", sort);
     if (algorithm) params.append("algorithm", algorithm);
+    if (page) params.append("page", page.toString());
+    if (limit) params.append("limit", limit.toString());
     const queryString = params.toString();
-    return api.get<NoteListItem[]>(
+    return api.get<NotesResponse>(
       queryString ? `/notes?${queryString}` : "/notes",
     );
   },
@@ -56,11 +66,18 @@ export const notesApi = {
 
 // tanstack query hooks
 
-export const useNotes = (tag?: string, search?: string, sort?: SortOption, algorithm?: SortAlgorithm) => {
+export const useNotes = (
+  tag?: string,
+  search?: string,
+  sort?: SortOption,
+  algorithm?: SortAlgorithm,
+  page?: number,
+  limit?: number,
+) => {
   return useQuery({
-    queryKey: ["notes", tag, search, sort, algorithm],
-    queryFn: () => notesApi.getAll(tag, search, sort, algorithm),
-    select: (response) => response.data || [],
+    queryKey: ["notes", tag, search, sort, algorithm, page, limit],
+    queryFn: () => notesApi.getAll(tag, search, sort, algorithm, page, limit),
+    select: (response) => response.data,
     retry: 2,
     staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
