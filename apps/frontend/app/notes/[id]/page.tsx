@@ -122,12 +122,20 @@ export default function NoteDetailPage() {
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                 Comments ({note.comments.length})
               </h2>
-              <button
-                onClick={() => setShowDeleteConfirm(true)}
-                className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-              >
-                Delete Note
-              </button>
+              <div className="flex gap-4">
+                <Link
+                  href={`/notes/${id}/edit`}
+                  className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                >
+                  Edit Note
+                </Link>
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                >
+                  Delete Note
+                </button>
+              </div>
             </div>
 
             {/* Comment Form */}
