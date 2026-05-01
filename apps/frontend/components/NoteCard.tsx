@@ -29,7 +29,7 @@ export default function NoteCard({ note }: NoteCardProps) {
       <div className="text-sm text-gray-500 dark:text-gray-400 mb-3">
         {date}
       </div>
-      <div className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">
+      <div className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">
         <ReactMarkdown>{preview}</ReactMarkdown>
       </div>
       {note.tags.length > 0 && (
