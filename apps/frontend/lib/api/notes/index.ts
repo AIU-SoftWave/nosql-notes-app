@@ -19,6 +19,9 @@ export const notesApi = {
     api.put<NoteDetail>(`/notes/${id}`, data),
 
   delete: (id: string) => api.delete<DeleteNoteResult>(`/notes/${id}`),
+
+  addComment: (id: string, content: string) =>
+    api.post<Comment>(`/notes/${id}/comments`, { content }),
 };
 
 // tanstack query hooks
@@ -74,6 +77,18 @@ export const useDeleteNote = () => {
     mutationFn: notesApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notes"] });
+    },
+  });
+};
+
+export const useAddComment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, content }: { id: string; content: string }) =>
+      notesApi.addComment(id, content),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["notes", variables.id] });
     },
   });
 };
