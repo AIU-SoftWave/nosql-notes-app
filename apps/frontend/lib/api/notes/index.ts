@@ -9,7 +9,15 @@ import {
 } from "./types";
 
 export const notesApi = {
-  getAll: () => api.get<NoteListItem[]>("/notes"),
+  getAll: (tag?: string, search?: string) => {
+    const params = new URLSearchParams();
+    if (tag) params.append("tag", tag);
+    if (search) params.append("search", search);
+    const queryString = params.toString();
+    return api.get<NoteListItem[]>(
+      queryString ? `/notes?${queryString}` : "/notes",
+    );
+  },
 
   getById: (id: string) => api.get<NoteDetail>(`/notes/${id}`),
 
@@ -26,10 +34,10 @@ export const notesApi = {
 
 // tanstack query hooks
 
-export const useNotes = () => {
+export const useNotes = (tag?: string, search?: string) => {
   return useQuery({
-    queryKey: ["notes"],
-    queryFn: notesApi.getAll,
+    queryKey: ["notes", tag, search],
+    queryFn: () => notesApi.getAll(tag, search),
     select: (response) => response.data || [],
     retry: 2,
     staleTime: 1000 * 60 * 5, // 5 minutes
