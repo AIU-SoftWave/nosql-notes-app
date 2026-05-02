@@ -110,3 +110,27 @@ BE -> FE : 200
 FE -> User : Display
 
 @enduml
+@startuml Data Model
+
+!theme plain
+
+entity "Note" {
+  *id: ObjectId <<PK>>
+  --
+  *title: string
+  *content: string
+  tags: string[]
+  views: number
+  createdAt: datetime
+  updatedAt: datetime
+}
+
+entity "Comment" {
+  *content: string
+  --
+  createdAt: datetime
+}
+
+Note ||--o{ Comment : contains
+
+@enduml
