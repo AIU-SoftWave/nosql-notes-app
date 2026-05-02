@@ -2,9 +2,12 @@ import type { Comment } from '../entities/comment.entity';
 
 export interface NoteListItem {
   id: string;
+  userId: string;
+  username: string;
   title: string;
   content: string;
   tags: string[];
+  isPublic: boolean;
   createdAt: Date;
   updatedAt: Date;
   commentCount: number;
@@ -13,9 +16,12 @@ export interface NoteListItem {
 
 export interface NoteDetail {
   id: string;
+  userId: string;
+  username: string;
   title: string;
   content: string;
   tags: string[];
+  isPublic: boolean;
   comments: Comment[];
   createdAt: Date;
   updatedAt: Date;

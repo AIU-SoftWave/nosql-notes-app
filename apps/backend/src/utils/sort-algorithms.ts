@@ -16,9 +16,12 @@ export class SortOption {
 
 export interface SortedNote {
   id: string;
+  userId: string;
+  username: string;
   title: string;
   content: string;
   tags: string[];
+  isPublic: boolean;
   createdAt: Date;
   updatedAt: Date;
   commentCount: number;

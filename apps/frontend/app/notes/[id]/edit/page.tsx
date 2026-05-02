@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useNote, useUpdateNote } from "@/lib/api/notes";
+import { useAuth } from "@/app/auth-context";
 import Link from "next/link";
 import Loading from "@/components/Loading";
 import MarkdownEditorLite from "react-markdown-editor-lite";
@@ -13,24 +14,32 @@ export default function EditNotePage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-
   const { data: note, isLoading, error } = useNote(id);
   const updateNote = useUpdateNote();
-
+  const { user, isLoading: authLoading } = useAuth();
+  
   const initializedRef = useRef(false);
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [tags, setTags] = useState("");
+  const [isPublic, setIsPublic] = useState(false);
   const [formError, setFormError] = useState("");
 
   // Pre-fill form when note data loads (only once)
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, authLoading, router]);
+
   useEffect(() => {
     if (note && !initializedRef.current) {
       initializedRef.current = true;
       setTitle(note.title);
       setContent(note.content);
       setTags(note.tags.join(", "));
+      setIsPublic(note.isPublic);
     }
   }, [note]);
 
@@ -57,6 +66,7 @@ export default function EditNotePage() {
           title: title.trim(),
           content: content.trim(),
           tags: parsedTags,
+          isPublic,
         },
       });
       router.push(`/notes/${id}`);
@@ -170,6 +180,22 @@ export default function EditNotePage() {
               Tags must be lowercase, alphanumeric with hyphens, max 20
               characters
             </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="isPublic"
+              checked={isPublic}
+              onChange={(e) => setIsPublic(e.target.checked)}
+              className="w-4 h-4 text-blue-600 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500"
+            />
+            <label
+              htmlFor="isPublic"
+              className="text-sm font-medium text-gray-700 dark:text-gray-300"
+            >
+              Make this note public
+            </label>
           </div>
 
           <div className="flex gap-4">

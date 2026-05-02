@@ -11,4 +11,7 @@ export class UpdateNoteDto extends PartialType(CreateNoteDto) {
 
   @ApiPropertyOptional({ type: [String], example: ['updated', 'tag'] })
   tags?: string[];
+
+  @ApiPropertyOptional({ example: true })
+  isPublic?: boolean;
 }

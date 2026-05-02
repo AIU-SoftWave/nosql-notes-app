@@ -10,11 +10,15 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableShutdownHooks();
   app.setGlobalPrefix('api');
+  
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       transform: true,
-      forbidNonWhitelisted: true,
+      forbidNonWhitelisted: false, // Changed to not fail on extra properties
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
     }),
   );
   app.useGlobalInterceptors(new TransformInterceptor());
@@ -29,13 +33,14 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs', app, document);
 
-  const corsOrigin = process.env.CORS_ORIGIN || '*';
+  const corsOrigin = 'http://localhost:3001';
   app.enableCors({
     origin: corsOrigin,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    allowedHeaders: 'Content-Type, Accept',
+    allowedHeaders: 'Content-Type, Accept, Authorization',
+    credentials: true,
   });
-  const port = 3000;
+  const port = process.env.PORT || 5000;
   await app.listen(port, '0.0.0.0');
   logger.log(`Backend is running on port ${port}`);
 }

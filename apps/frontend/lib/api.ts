@@ -13,10 +13,16 @@ async function request<T>(
 ): Promise<ApiResponse<T>> {
   const url = `${API_BASE_URL}/api${endpoint}`;
 
-  const headers = {
+  const headers: HeadersInit = {
     "Content-Type": "application/json",
-    ...options.headers,
   };
+
+  const token = localStorage.getItem("token");
+  if (token) {
+    (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
+  }
+
+  Object.assign(headers, options.headers);
 
   try {
     const response = await fetch(url, {

@@ -1,6 +1,7 @@
 import { HydratedDocument } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { ApiProperty } from '@nestjs/swagger';
+import { Types } from 'mongoose';
 import { Comment, CommentSchema } from './comment.entity';
 
 export type NoteDocument = HydratedDocument<Note>;
@@ -12,6 +13,10 @@ export type NoteDocument = HydratedDocument<Note>;
 export class Note {
   @ApiProperty({ example: '65f1d7c7f1d7c7f1d7c7f1d7' })
   id?: string;
+
+  @ApiProperty({ example: '65f1d7c7f1d7c7f1d7c7f1d7' })
+  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  userId!: Types.ObjectId;
 
   @ApiProperty({ example: 'Meeting notes' })
   @Prop({ required: true, trim: true })
@@ -29,6 +34,10 @@ export class Note {
   @Prop({ type: [CommentSchema], default: [] })
   comments!: Comment[];
 
+  @ApiProperty({ example: false })
+  @Prop({ default: false })
+  isPublic!: boolean;
+
   @ApiProperty({ example: 42 })
   @Prop({ default: 0 })
   views!: number;
@@ -45,3 +54,5 @@ export const NoteSchema = SchemaFactory.createForClass(Note);
 NoteSchema.index({ title: 'text', content: 'text' });
 NoteSchema.index({ tags: 1 });
 NoteSchema.index({ createdAt: -1 });
+NoteSchema.index({ userId: 1 });
+NoteSchema.index({ isPublic: 1 });

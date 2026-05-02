@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsBoolean,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -26,4 +27,9 @@ export class CreateNoteDto {
   @IsTag({ each: true })
   @ArrayMaxSize(10, { message: 'Maximum 10 tags allowed' })
   tags?: string[];
+
+  @ApiPropertyOptional({ example: false })
+  @IsOptional()
+  @IsBoolean()
+  isPublic?: boolean;
 }

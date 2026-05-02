@@ -1,8 +1,11 @@
 export interface NoteListItem {
   id: string;
+  userId: string;
+  username: string;
   title: string;
   content: string;
   tags: string[];
+  isPublic: boolean;
   createdAt: string;
   updatedAt: string;
   commentCount: number;
@@ -11,9 +14,12 @@ export interface NoteListItem {
 
 export interface NoteDetail {
   id: string;
+  userId: string;
+  username: string;
   title: string;
   content: string;
   tags: string[];
+  isPublic: boolean;
   comments: Comment[];
   createdAt: string;
   updatedAt: string;
@@ -29,6 +35,7 @@ export interface CreateNoteInput {
   title: string;
   content: string;
   tags?: string[];
+  isPublic?: boolean;
   [key: string]: unknown;
 }
 
@@ -36,6 +43,7 @@ export interface UpdateNoteInput {
   title?: string;
   content?: string;
   tags?: string[];
+  isPublic?: boolean;
   [key: string]: unknown;
 }
 

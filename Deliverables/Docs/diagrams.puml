@@ -114,12 +114,22 @@ FE -> User : Display
 
 !theme plain
 
+entity "User" {
+  *id: ObjectId <<PK>>
+  --
+  *username: string <<unique>>
+  *password: string
+  createdAt: datetime
+}
+
 entity "Note" {
   *id: ObjectId <<PK>>
+  *userId: ObjectId <<FK>>
   --
   *title: string
   *content: string
   tags: string[]
+  isPublic: boolean
   views: number
   createdAt: datetime
   updatedAt: datetime
@@ -131,6 +141,7 @@ entity "Comment" {
   createdAt: datetime
 }
 
+User ||--o{ Note : creates
 Note ||--o{ Comment : contains
 
 @enduml

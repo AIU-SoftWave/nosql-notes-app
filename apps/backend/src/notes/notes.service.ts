@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Note, NoteDocument } from '../entities/note.entity';
+import { User, UserDocument } from '../entities/user.entity';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
@@ -64,16 +65,18 @@ export class NotesService {
     }
   }
 
-  async create(createNoteDto: CreateNoteDto): Promise<NoteDetail> {
+  async create(createNoteDto: CreateNoteDto, user: UserDocument): Promise<NoteDetail> {
     const note = await this.notesModel.create({
+      userId: user._id,
       title: createNoteDto.title,
       content: createNoteDto.content,
       tags: createNoteDto.tags ?? [],
+      isPublic: createNoteDto.isPublic ?? false,
       comments: [],
       views: 0,
     });
 
-    return this.toNoteDetail(note);
+    return this.toNoteDetail(note, user);
   }
 
   async findAll(
@@ -83,8 +86,21 @@ export class NotesService {
     algorithm: SortAlgorithm = 'merge',
     page: number = 1,
     limit: number = 10,
+    userId?: string,
   ): Promise<NotesResponse> {
-    const filter: any = {};
+    let filter: any = {};
+
+    if (userId) {
+      const userObjectId = new Types.ObjectId(userId);
+      filter = {
+        $or: [
+          { isPublic: true },
+          { userId: userObjectId }
+        ]
+      };
+    } else {
+      filter = { isPublic: true };
+    }
 
     if (tag) {
       filter.tags = { $regex: new RegExp(tag, 'i') };
@@ -92,18 +108,32 @@ export class NotesService {
 
     if (search && search.length >= 2) {
       const searchRegex = new RegExp(search, 'i');
-      filter.$or = [
-        { title: { $regex: searchRegex } },
-        { content: { $regex: searchRegex } }
-      ];
+      const searchFilter = {
+        $or: [
+          { title: { $regex: searchRegex } },
+          { content: { $regex: searchRegex } }
+        ]
+      };
+      
+      if (userId) {
+        filter = {
+          $and: [
+            { $or: [{ isPublic: true }, { userId: new Types.ObjectId(userId) }] },
+            searchFilter
+          ]
+        };
+      } else {
+        filter = searchFilter;
+      }
     }
 
     const startTime = process.hrtime.bigint();
-    const total = await this.notesModel.countDocuments(filter);
+    const total = await this.notesModel.countDocuments(filter).exec();
     
     // Fetch notes with pagination
     let notes = await this.notesModel
       .find(filter)
+      .populate('userId', 'username')
       .skip((page - 1) * limit)
       .limit(limit)
       .exec();
@@ -119,6 +149,7 @@ export class NotesService {
       };
       notes = await this.notesModel
         .find(filter)
+        .populate('userId', 'username')
         .sort(sortMap[sort] || { createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
@@ -130,16 +161,20 @@ export class NotesService {
     }
 
     // Fetch all for custom sorting (no pagination for custom sorts as they need all data)
-    const allNotes = await this.notesModel.find(filter).exec();
+    const allNotes = await this.notesModel.find(filter).populate('userId', 'username').exec();
 
     // Map to SortedNote for custom sorting
     const sortedNotes: SortedNote[] = allNotes.map(note => {
       const plain = note.toObject();
+      const userId = plain.userId as any;
       return {
         id: plain._id.toString(),
+        userId: userId?._id?.toString() || '',
+        username: userId?.username || '',
         title: plain.title,
         content: plain.content,
         tags: plain.tags || [],
+        isPublic: plain.isPublic || false,
         createdAt: plain.createdAt,
         updatedAt: plain.updatedAt,
         commentCount: plain.comments?.length || 0,
@@ -178,9 +213,12 @@ export class NotesService {
 
     const noteItems = paginatedData.map(note => ({
       id: note.id,
+      userId: note.userId,
+      username: note.username,
       title: note.title,
       content: note.content,
       tags: note.tags,
+      isPublic: note.isPublic,
       createdAt: note.createdAt,
       updatedAt: note.updatedAt,
       commentCount: note.commentCount,
@@ -249,28 +287,43 @@ export class NotesService {
     return config[sort] || { field: 'createdAt', order: 'desc' };
   }
 
-  async findOne(id: string): Promise<NoteDetail> {
+  async findOne(id: string, requestUserId?: string): Promise<NoteDetail> {
     if (!Types.ObjectId.isValid(id)) {
       throw new NotFoundException('Note not found');
     }
 
-    const note = await this.notesModel
-      .findByIdAndUpdate(
-        id,
-        { $inc: { views: 1 } },
-        { new: true }
-      )
-      .exec();
+    const note = await this.notesModel.findById(id).populate('userId', 'username').exec();
 
     if (!note) {
       throw new NotFoundException('Note not found');
     }
 
-    return this.toNoteDetail(note);
+    const noteUserId = note.userId instanceof Types.ObjectId 
+      ? note.userId.toString() 
+      : (note.userId as any)?._id?.toString();
+    
+    const isOwner = requestUserId && noteUserId === requestUserId;
+    const isPublic = note.isPublic;
+
+    if (!isPublic && !isOwner) {
+      throw new ForbiddenException('You do not have access to this note');
+    }
+
+    if (isPublic || isOwner) {
+      await this.notesModel.findByIdAndUpdate(id, { $inc: { views: 1 } });
+    }
+
+    return this.toNoteDetail(note, note.userId as any);
   }
 
-  async addComment(id: string, createCommentDto: CreateCommentDto): Promise<NoteDetail> {
-    await this.findNoteById(id);
+  async addComment(id: string, createCommentDto: CreateCommentDto, user: UserDocument): Promise<NoteDetail> {
+    const note = await this.findNoteById(id);
+    const isOwner = note.userId.toString() === user.id;
+
+    const canAccess = note.isPublic || isOwner;
+    if (!canAccess) {
+      throw new ForbiddenException('You cannot comment on this note');
+    }
 
     const updated = await this.notesModel
       .findByIdAndUpdate(
@@ -285,17 +338,22 @@ export class NotesService {
         },
         { new: true, runValidators: true },
       )
+      .populate('userId', 'username')
       .exec();
 
     if (!updated) {
       throw new NotFoundException('Note not found');
     }
 
-    return this.toNoteDetail(updated);
+    return this.toNoteDetail(updated, user);
   }
 
-  async update(id: string, updateNoteDto: UpdateNoteDto): Promise<NoteDetail> {
-    await this.findNoteById(id);
+  async update(id: string, updateNoteDto: UpdateNoteDto, user: UserDocument): Promise<NoteDetail> {
+    const note = await this.findNoteById(id);
+    
+    if (note.userId.toString() !== user.id) {
+      throw new ForbiddenException('You can only update your own notes');
+    }
 
     const updated = await this.notesModel
       .findByIdAndUpdate(
@@ -304,20 +362,27 @@ export class NotesService {
           ...(updateNoteDto.title !== undefined ? { title: updateNoteDto.title } : {}),
           ...(updateNoteDto.content !== undefined ? { content: updateNoteDto.content } : {}),
           ...(updateNoteDto.tags !== undefined ? { tags: updateNoteDto.tags } : {}),
+          ...(updateNoteDto.isPublic !== undefined ? { isPublic: updateNoteDto.isPublic } : {}),
         },
         { new: true, runValidators: true },
       )
+      .populate('userId', 'username')
       .exec();
 
     if (!updated) {
       throw new NotFoundException('Note not found');
     }
 
-    return this.toNoteDetail(updated);
+    return this.toNoteDetail(updated, user);
   }
 
-  async delete(id: string): Promise<DeleteNoteResult> {
+  async delete(id: string, user: UserDocument): Promise<DeleteNoteResult> {
     const note = await this.findNoteById(id);
+    
+    if (note.userId.toString() !== user.id) {
+      throw new ForbiddenException('You can only delete your own notes');
+    }
+    
     await this.notesModel.findByIdAndDelete(note._id.toString()).exec();
 
     return {
@@ -327,6 +392,9 @@ export class NotesService {
 
   async getStats(): Promise<NoteStats> {
     const result = await this.notesModel.aggregate([
+      {
+        $match: { isPublic: true }
+      },
       {
         $group: {
           _id: null,
@@ -338,6 +406,7 @@ export class NotesService {
     ]);
 
     const tagStats = await this.notesModel.aggregate([
+      { $match: { isPublic: true } },
       { $unwind: '$tags' },
       { $group: { _id: '$tags', count: { $sum: 1 } } },
       { $sort: { count: -1 } },
@@ -357,7 +426,7 @@ export class NotesService {
 
   async getActivity(limit: number = 10): Promise<ActivityItem[]> {
     const notes = await this.notesModel
-      .find({}, 'title createdAt')
+      .find({ isPublic: true }, 'title createdAt')
       .sort({ createdAt: -1 })
       .limit(limit)
       .lean();
@@ -370,7 +439,7 @@ export class NotesService {
     }));
 
     const notesWithComments = await this.notesModel
-      .find({ $expr: { $gt: [{ $size: { $ifNull: ['$comments', []] }}, 0] } }, 'title comments')
+      .find({ isPublic: true, $expr: { $gt: [{ $size: { $ifNull: ['$comments', []] }}, 0] } }, 'title comments')
       .lean();
 
     const commentActivities: ActivityItem[] = [];
@@ -406,14 +475,19 @@ export class NotesService {
     return note;
   }
 
-  private toNoteListItem(note: NoteDocument): NoteListItem {
-    const plain = note.toObject();
+  private toNoteListItem(note: NoteDocument | any): NoteListItem {
+    const plain = note.toObject ? note.toObject() : note;
+    const userId = plain.userId;
+    const username = typeof userId === 'object' ? userId?.username : '';
 
     return {
       id: plain._id.toString(),
+      userId: typeof userId === 'object' ? userId._id.toString() : userId?.toString() || '',
+      username: username || '',
       title: plain.title,
       content: plain.content,
       tags: plain.tags ?? [],
+      isPublic: plain.isPublic ?? false,
       createdAt: plain.createdAt,
       updatedAt: plain.updatedAt,
       commentCount: plain.comments?.length ?? 0,
@@ -421,14 +495,19 @@ export class NotesService {
     };
   }
 
-  private toNoteDetail(note: NoteDocument): NoteDetail {
-    const plain = note.toObject();
+  private toNoteDetail(note: NoteDocument | any, user: UserDocument | any): NoteDetail {
+    const plain = note.toObject ? note.toObject() : note;
+    const userId = plain.userId;
+    const username = typeof userId === 'object' ? userId?.username : (user?.username || '');
 
     return {
       id: plain._id.toString(),
+      userId: typeof userId === 'object' ? userId._id.toString() : userId?.toString() || '',
+      username: username || '',
       title: plain.title,
       content: plain.content,
       tags: plain.tags ?? [],
+      isPublic: plain.isPublic ?? false,
       comments: plain.comments ?? [],
       createdAt: plain.createdAt,
       updatedAt: plain.updatedAt,

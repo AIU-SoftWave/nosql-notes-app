@@ -1,32 +1,54 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useCreateNote } from "@/lib/api/notes";
-import Link from "next/link";
-import MarkdownEditorLite from "react-markdown-editor-lite";
-import ReactMarkdown from "react-markdown";
-import "react-markdown-editor-lite/lib/index.css";
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/app/auth-context';
+import { useCreateNote } from '@/lib/api/notes';
+import Link from 'next/link';
+import MarkdownEditorLite from 'react-markdown-editor-lite';
+import ReactMarkdown from 'react-markdown';
+import 'react-markdown-editor-lite/lib/index.css';
 
 export default function CreateNotePage() {
+  const router = useRouter();
+  const { user, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isLoading, router]);
+
+  if (isLoading) {
+    return null;
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  // Dynamic import to avoid hydration mismatch
+  return <CreateNoteForm />;
+}
+
+function CreateNoteForm() {
   const router = useRouter();
   const createNote = useCreateNote();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [tags, setTags] = useState("");
+  const [isPublic, setIsPublic] = useState(false);
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    // Validation
     if (!title.trim()) {
       setError("Title is required");
       return;
     }
 
-    // Parse tags
     const parsedTags = tags
       .split(",")
       .map((t) => t.trim())
@@ -37,6 +59,7 @@ export default function CreateNotePage() {
         title: title.trim(),
         content: content.trim(),
         tags: parsedTags,
+        isPublic,
       });
       router.push("/notes");
     } catch {
@@ -124,6 +147,22 @@ export default function CreateNotePage() {
               Tags must be lowercase, alphanumeric with hyphens, max 20
               characters
             </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="isPublic"
+              checked={isPublic}
+              onChange={(e) => setIsPublic(e.target.checked)}
+              className="w-4 h-4 text-blue-600 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500"
+            />
+            <label
+              htmlFor="isPublic"
+              className="text-sm font-medium text-gray-700 dark:text-gray-300"
+            >
+              Make this note public
+            </label>
           </div>
 
           <div className="flex gap-4">
