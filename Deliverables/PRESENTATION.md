@@ -21,6 +21,17 @@
   - **Data Locality:** Storing comments as embedded sub-documents (One seek vs. multiple JOINs).
   - **Developer Velocity:** Data in MongoDB looks exactly like our JSON/TypeScript objects.
 
+## Slide 3.5: NoSQL Database Types Comparison
+
+| Type              | Examples         | Best For                 | Our Fit          |
+| ----------------- | ---------------- | ------------------------ | ---------------- |
+| **Document**      | MongoDB, CouchDB | Content, catalogs, notes | ✅ Selected      |
+| **Key-Value**     | Redis, DynamoDB  | Caching, sessions        | ⚠️ Supplementary |
+| **Column-Family** | Cassandra, HBase | Time-series, IoT         | ❌ Not needed    |
+| **Graph**         | Neo4j, ArangoDB  | Social networks          | ❌ Overkill      |
+
+- **Why MongoDB (Document):** Notes are self-contained documents with embedded comments, variable-length tags, and semi-structured Markdown content
+
 ## Slide 4: Data Modeling Deep Dive
 
 - _Visual:_ Include `diagrams/png/data_model.png`
@@ -56,12 +67,28 @@
 - **View Tracking:** Using MongoDB's atomic `$inc` operator to increment view counts in real-time.
 - **Statistics:** Leveraging MongoDB Aggregation Pipelines for computing stats without application-side processing.
 
+## Slide 7.5: Security Implementation (Course Objective #8)
+
+- **Defense in Depth Strategy:** Multiple security layers protect the application
+- **Helmet Security Headers:**
+  - Content Security Policy (CSP) blocks XSS attacks
+  - X-Frame-Options prevents clickjacking
+  - Strict-Transport-Security enforces HTTPS
+- **Rate Limiting:**
+  - 100 requests per 15 minutes (general API)
+  - 5 login attempts per 15 minutes (auth endpoints)
+  - RFC-compliant RateLimit headers
+- **Input Sanitization:**
+  - `@Transform` decorators strip `<script>` tags and event handlers
+  - Max length constraints (title: 200, content: 50,000, comments: 1,000)
+  - Schema-level regex validation blocks injection attempts
+
 ## Slide 8: Technical Implementation (CRUD)
 
-- **Create:** Validating dynamic BSON documents.
+- **Create:** Validating dynamic BSON documents with sanitized input.
 - **Read:** Combining Tag Filtering with Regex-based text search.
 - **Update/Delete:** Maintaining referential integrity without foreign key constraints.
-- **Sorting:** Multiple sort options (newest, oldest, alphabetical) using MongoDB's `sort()`.
+- **Sorting:** Multiple sort options (newest, oldest, alphabetical) with performance metrics.
 - **Statistics:** Dedicated `/stats` endpoint using Aggregation Pipeline.
 - **Activity Feed:** Real-time activity tracking with `$unionWith` for cross-collection queries.
 

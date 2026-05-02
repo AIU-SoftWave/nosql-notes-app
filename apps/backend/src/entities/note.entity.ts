@@ -51,8 +51,22 @@ export class Note {
 
 export const NoteSchema = SchemaFactory.createForClass(Note);
 
+// Text search index for full-text search
 NoteSchema.index({ title: 'text', content: 'text' });
-NoteSchema.index({ tags: 1 });
+
+// Compound index for tag filtering with visibility check
+NoteSchema.index({ tags: 1, isPublic: 1, createdAt: -1 });
+
+// Compound index for user's notes with visibility (most common query pattern)
+NoteSchema.index({ userId: 1, isPublic: 1, createdAt: -1 });
+
+// Sparse index for popular notes (views > 100) - leaderboard queries
+NoteSchema.index(
+  { views: -1 },
+  { partialFilterExpression: { views: { $gt: 100 } } },
+);
+
+// Single field indexes for individual filters
 NoteSchema.index({ createdAt: -1 });
 NoteSchema.index({ userId: 1 });
 NoteSchema.index({ isPublic: 1 });

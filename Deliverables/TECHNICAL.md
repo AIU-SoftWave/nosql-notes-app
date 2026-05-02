@@ -18,6 +18,7 @@ A full-stack notes application with user authentication, public/private notes ma
 ### Entities
 
 #### User
+
 ```typescript
 {
   _id: ObjectId,        // Primary key
@@ -29,6 +30,7 @@ A full-stack notes application with user authentication, public/private notes ma
 ```
 
 #### Note
+
 ```typescript
 {
   _id: ObjectId,        // Primary key
@@ -45,6 +47,7 @@ A full-stack notes application with user authentication, public/private notes ma
 ```
 
 #### Comment (Embedded)
+
 ```typescript
 {
   content: string,     // Required
@@ -65,12 +68,13 @@ Note (1) ──────< (N) Comment
 
 ### Authentication
 
-| Method | Endpoint | Auth | Description |
-|-------|----------|------|-------------|
-| POST | `/api/auth/register` | No | Register new user |
-| POST | `/api/auth/login` | No | Login, returns JWT |
+| Method | Endpoint             | Auth | Description        |
+| ------ | -------------------- | ---- | ------------------ |
+| POST   | `/api/auth/register` | No   | Register new user  |
+| POST   | `/api/auth/login`    | No   | Login, returns JWT |
 
 **Request Body:**
+
 ```json
 {
   "username": "string",
@@ -79,6 +83,7 @@ Note (1) ──────< (N) Comment
 ```
 
 **Response:**
+
 ```json
 {
   "accessToken": "eyJhbG...",
@@ -91,17 +96,18 @@ Note (1) ──────< (N) Comment
 
 ### Notes
 
-| Method | Endpoint | Auth | Description |
-|-------|----------|------|-------------|
-| GET | `/api/notes` | JWT | List notes (public + own private) |
-| GET | `/api/notes/:id` | No | Get single note (if public) |
-| POST | `/api/notes` | JWT | Create private note |
-| PUT | `/api/notes/:id` | JWT (owner) | Update note |
-| DELETE | `/api/notes/:id` | JWT (owner) | Delete note |
-| GET | `/api/notes/stats` | No | Get statistics |
-| GET | `/api/notes/activity` | No | Recent activity |
+| Method | Endpoint              | Auth        | Description                       |
+| ------ | --------------------- | ----------- | --------------------------------- |
+| GET    | `/api/notes`          | JWT         | List notes (public + own private) |
+| GET    | `/api/notes/:id`      | No          | Get single note (if public)       |
+| POST   | `/api/notes`          | JWT         | Create private note               |
+| PUT    | `/api/notes/:id`      | JWT (owner) | Update note                       |
+| DELETE | `/api/notes/:id`      | JWT (owner) | Delete note                       |
+| GET    | `/api/notes/stats`    | No          | Get statistics                    |
+| GET    | `/api/notes/activity` | No          | Recent activity                   |
 
 **Query Parameters:**
+
 - `tag`: Filter by tag
 - `search`: Search in title/content (min 2 chars)
 - `sort`: newest|oldest|alpha|views|comments
@@ -110,6 +116,7 @@ Note (1) ──────< (N) Comment
 - `limit`: Items per page
 
 **Response (GET /notes):**
+
 ```json
 {
   "data": [
@@ -147,6 +154,7 @@ Note (1) ──────< (N) Comment
 ```
 
 ### Create/Update Note Request Body:
+
 ```json
 {
   "title": "string",
@@ -160,22 +168,23 @@ Note (1) ──────< (N) Comment
 
 ## Frontend Pages
 
-| Route | Description |
-|-------|-------------|
-| `/` | Home |
-| `/notes` | Notes list with search/filter |
-| `/notes/new` | Create note (auth required) |
-| `/notes/:id` | Note detail |
-| `/notes/:id/edit` | Edit note (owner only) |
-| `/login` | Login page |
-| `/register` | Register page |
-| `/stats` | Statistics |
+| Route             | Description                   |
+| ----------------- | ----------------------------- |
+| `/`               | Home                          |
+| `/notes`          | Notes list with search/filter |
+| `/notes/new`      | Create note (auth required)   |
+| `/notes/:id`      | Note detail                   |
+| `/notes/:id/edit` | Edit note (owner only)        |
+| `/login`          | Login page                    |
+| `/register`       | Register page                 |
+| `/stats`          | Statistics                    |
 
 ---
 
 ## Environment Variables
 
 ### Backend (.env)
+
 ```
 PORT=5000
 MONGODB_URI=mongodb://localhost:27017/notes-db
@@ -184,6 +193,7 @@ CORS_ORIGIN=http://localhost:3001
 ```
 
 ### Frontend (.env)
+
 ```
 NEXT_PUBLIC_API_URL=http://localhost:5000
 ```
@@ -194,21 +204,87 @@ NEXT_PUBLIC_API_URL=http://localhost:5000
 
 ### Security
 
-1. **Password Hashing**: bcrypt with 10 salt rounds
-2. **JWT Authentication**: 7-day expiration
-3. **Route Protection**: 
-   - Public notes: Read-only for all
-   - Private notes: Only owner can read/edit/delete
-4. **CORS**: Configured for specific origin only
+#### 1. Authentication & Authorization
+
+- **Password Hashing**: bcrypt with 10 salt rounds for secure password storage
+- **JWT Authentication**: 7-day token expiration with secure payload signing
+- **Route Protection**:
+  - Public notes: Read-only access for all users
+  - Private notes: Owner-only access for read/edit/delete operations
+- **JWT Strategy**: Passport JWT with bearer token validation on protected routes
+
+#### 2. Input Validation & Sanitization
+
+- **DTO Validation**: class-validator decorators enforce type safety and constraints
+- **Input Sanitization**: `@Transform` decorators in DTOs remove malicious content:
+  ```typescript
+  @Transform(({ value }: { value: string }) => sanitizeInput(value))
+  title!: string;
+  ```
+- **Sanitization Rules**:
+  - Removes `<script>` tags and JavaScript protocol handlers
+  - Strips event handler attributes (`onclick`, `onload`, etc.)
+  - Trims whitespace and normalizes input
+- **Tag Validation**: Custom `@IsTag` validator ensures tags contain only alphanumeric characters, hyphens, and underscores
+
+#### 3. XSS & Injection Prevention
+
+- **Schema-Level Validation**: Comment entity has built-in regex validation to reject script injection attempts
+- **Max Length Constraints**:
+  - Title: 200 characters max
+  - Content: 50,000 characters max
+  - Comments: 1,000 characters max
+  - Tags: 10 tags maximum per note
+
+#### 4. Rate Limiting & DDoS Protection
+
+- **General Rate Limiting**: 100 requests per 15 minutes per IP
+- **Auth Endpoint Protection**: Stricter 5 attempts per 15 minutes for login/register
+- **Skip Successful Requests**: Successful logins don't count against rate limits
+- **Standard Headers**: RFC-compliant `RateLimit-*` headers for client awareness
+
+#### 5. Security Headers (Helmet)
+
+```javascript
+helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+});
+```
+
+- **Content Security Policy**: Restricts resource loading to trusted sources
+- **X-Frame-Options**: Prevents clickjacking attacks
+- **X-Content-Type-Options**: Prevents MIME type sniffing
+- **Strict-Transport-Security**: Enforces HTTPS connections
+
+#### 6. CORS Configuration
+
+- Whitelist-based origin validation
+- Credentials-enabled for authenticated requests
+- Restricted HTTP methods (GET, POST, PUT, PATCH, DELETE, HEAD)
+- Specific allowed headers for API communication
+
+#### 7. Database Security
+
+- **Parameterized Queries**: Mongoose prevents NoSQL injection
+- **Credential Masking**: Database URIs are sanitized in logs (passwords replaced with \*\*\*\*)
+- **Connection Security**: MongoDB connection strings support TLS/SSL
+- **Index-Based Queries**: All user-facing queries use indexed fields to prevent full collection scans
 
 ### Sorting Algorithms
 
-| Algorithm | Time Complexity | Space Complexity | Stable |
-|-----------|----------------|-------------------|--------|
-| Merge Sort | O(n log n) | O(n) | Yes |
-| Quick Sort | O(n log n) avg | O(log n) | No |
-| Bubble Sort | O(n²) | O(1) | Yes |
-| MongoDB Native | O(log n) | O(1) | Depends |
+| Algorithm      | Time Complexity | Space Complexity | Stable  |
+| -------------- | --------------- | ---------------- | ------- |
+| Merge Sort     | O(n log n)      | O(n)             | Yes     |
+| Quick Sort     | O(n log n) avg  | O(log n)         | No      |
+| Bubble Sort    | O(n²)           | O(1)             | Yes     |
+| MongoDB Native | O(log n)        | O(1)             | Depends |
 
 ### Indexes
 
@@ -216,12 +292,20 @@ NEXT_PUBLIC_API_URL=http://localhost:5000
 // User
 { username: 1 }  // unique
 
-// Note  
+// Note - Single Field
 { title: 'text', content: 'text' }  // text search
-{ tags: 1 }
-{ createdAt: -1 }
-{ userId: 1 }
-{ isPublic: 1 }
+{ tags: 1 }                          // tag filtering
+{ createdAt: -1 }                    // date sorting
+{ userId: 1 }                        // user queries
+{ isPublic: 1 }                      // visibility filter
+
+// Note - Compound Indexes
+{ userId: 1, isPublic: 1, createdAt: -1 }  // user's notes by visibility
+{ tags: 1, isPublic: 1, createdAt: -1 }    // tag search with visibility
+
+// Note - Sparse/Partial Index
+{ views: -1 }  // partialFilterExpression: { views: { $gt: 100 } }
+               // Only indexes popular notes for leaderboard
 ```
 
 ---
@@ -229,6 +313,7 @@ NEXT_PUBLIC_API_URL=http://localhost:5000
 ## Running the Application
 
 ### Backend
+
 ```bash
 cd apps/backend
 npm install
@@ -236,6 +321,7 @@ npm run start:dev  # Runs on port 5000
 ```
 
 ### Frontend
+
 ```bash
 cd apps/frontend
 npm install
@@ -326,6 +412,7 @@ Note ||--o{ Comment : contains
 ## Dependencies
 
 ### Backend
+
 - @nestjs/core
 - @nestjs/common
 - @nestjs/mongoose
@@ -339,6 +426,7 @@ Note ||--o{ Comment : contains
 - class-transformer
 
 ### Frontend
+
 - next
 - react
 - @tanstack/react-query
