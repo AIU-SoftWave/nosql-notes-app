@@ -1,6 +1,7 @@
 import { HydratedDocument } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { ApiProperty } from '@nestjs/swagger';
+import { Types } from 'mongoose';
 import { Comment, CommentSchema } from './comment.entity';
 
 export type NoteDocument = HydratedDocument<Note>;
@@ -12,6 +13,10 @@ export type NoteDocument = HydratedDocument<Note>;
 export class Note {
   @ApiProperty({ example: '65f1d7c7f1d7c7f1d7c7f1d7' })
   id?: string;
+
+  @ApiProperty({ example: '65f1d7c7f1d7c7f1d7c7f1d7' })
+  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  userId!: Types.ObjectId;
 
   @ApiProperty({ example: 'Meeting notes' })
   @Prop({ required: true, trim: true })
@@ -29,6 +34,10 @@ export class Note {
   @Prop({ type: [CommentSchema], default: [] })
   comments!: Comment[];
 
+  @ApiProperty({ example: false })
+  @Prop({ default: false })
+  isPublic!: boolean;
+
   @ApiProperty({ example: 42 })
   @Prop({ default: 0 })
   views!: number;
@@ -42,6 +51,22 @@ export class Note {
 
 export const NoteSchema = SchemaFactory.createForClass(Note);
 
+// Text search index for full-text search
 NoteSchema.index({ title: 'text', content: 'text' });
-NoteSchema.index({ tags: 1 });
+
+// Compound index for tag filtering with visibility check
+NoteSchema.index({ tags: 1, isPublic: 1, createdAt: -1 });
+
+// Compound index for user's notes with visibility (most common query pattern)
+NoteSchema.index({ userId: 1, isPublic: 1, createdAt: -1 });
+
+// Sparse index for popular notes (views > 100) - leaderboard queries
+NoteSchema.index(
+  { views: -1 },
+  { partialFilterExpression: { views: { $gt: 100 } } },
+);
+
+// Single field indexes for individual filters
 NoteSchema.index({ createdAt: -1 });
+NoteSchema.index({ userId: 1 });
+NoteSchema.index({ isPublic: 1 });

@@ -2,9 +2,12 @@ import type { Comment } from '../entities/comment.entity';
 
 export interface NoteListItem {
   id: string;
+  userId: string;
+  username: string;
   title: string;
   content: string;
   tags: string[];
+  isPublic: boolean;
   createdAt: Date;
   updatedAt: Date;
   commentCount: number;
@@ -13,9 +16,12 @@ export interface NoteListItem {
 
 export interface NoteDetail {
   id: string;
+  userId: string;
+  username: string;
   title: string;
   content: string;
   tags: string[];
+  isPublic: boolean;
   comments: Comment[];
   createdAt: Date;
   updatedAt: Date;
@@ -38,4 +44,29 @@ export interface ActivityItem {
   noteId: string;
   title: string;
   createdAt: Date;
+}
+
+export interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+export interface PerformanceMetrics {
+  algorithmId: string;
+  algorithmName: string;
+  executionTimeMs: number;
+  dataSize: number;
+  timeComplexity: string;
+  spaceComplexity: string;
+  stable: boolean;
+}
+
+export interface NotesResponse {
+  data: NoteListItem[];
+  pagination: PaginationInfo;
+  performance: PerformanceMetrics;
 }

@@ -1,6 +1,11 @@
+'use client';
+
 import Link from 'next/link';
+import { useAuth } from '@/app/auth-context';
 
 export default function Navigation() {
+  const { user, logout } = useAuth();
+
   return (
     <nav className="bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -23,12 +28,40 @@ export default function Navigation() {
             >
               Stats
             </Link>
-            <Link
-              href="/notes/new"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-            >
-              New Note
-            </Link>
+            {user ? (
+              <>
+                <span className="text-gray-700 dark:text-gray-300 px-3 py-2 text-sm font-medium">
+                  {user.username}
+                </span>
+                <Link
+                  href="/notes/new"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                >
+                  New Note
+                </Link>
+                <button
+                  onClick={logout}
+                  className="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/register"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                >
+                  Register
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

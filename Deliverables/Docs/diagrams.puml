@@ -30,6 +30,15 @@ package "Frontend (Next.js 16)" {
 }
 
 ' =========================
+' Security Layer
+' =========================
+package "Security Layer" {
+  component "Helmet\n(CSP, HSTS, X-Frame)" as HELMET
+  component "Rate Limiter\n(100req/15min)" as RATE
+  component "Auth Rate Limiter\n(5req/15min)" as AUTHRATE
+}
+
+' =========================
 ' Backend
 ' =========================
 package "Backend (NestJS)" {
@@ -37,6 +46,8 @@ package "Backend (NestJS)" {
   component "Notes Service" as NS
   component "DTOs" as DTO
   component "Validation Pipes" as VP
+  component "JWT Guard" as JWT
+  component "Input Sanitization\n(@Transform)" as SANITIZE
 }
 
 ' =========================
@@ -53,20 +64,30 @@ package "MongoDB Layer" {
 database "MongoDB Cluster" as DB
 
 ' =========================
-' Frontend → Backend
+' Frontend → Security Layer
 ' =========================
-NP --> NC : GET /notes
-ND --> NC : GET /notes/:id
-CF --> NC : POST /notes
-SD --> NC : GET /stats
-AF --> NC : GET /activity
+NP --> HELMET
+ND --> HELMET
+CF --> HELMET
+SD --> HELMET
+AF --> HELMET
+
+' =========================
+' Security Layer Flow
+' =========================
+HELMET --> RATE : Security Headers
+RATE --> AUTHRATE : All Requests
+AUTHRATE --> NC : Auth Routes
+RATE --> NC : General Routes
 
 ' =========================
 ' Backend Flow
 ' =========================
-NC --> VP : validate
-VP --> DTO : transform
-DTO --> NS : logic
+NC --> JWT : Protected Routes
+NC --> VP : validate & sanitize
+VP --> SANITIZE : @Transform
+SANITIZE --> DTO : clean data
+DTO --> NS : business logic
 
 ' =========================
 ' Backend → DB
@@ -108,5 +129,301 @@ BE -> DB : findByIdAndUpdate\n$inc: {views:1}
 DB -> BE : Note
 BE -> FE : 200
 FE -> User : Display
+
+@enduml
+@startuml Data Model
+
+!theme plain
+
+entity "User" {
+  *id: ObjectId <<PK>>
+  --
+  *username: string <<unique>>
+  *password: string
+  createdAt: datetime
+}
+
+entity "Note" {
+  *id: ObjectId <<PK>>
+  *userId: ObjectId <<FK>>
+  --
+  *title: string
+  *content: string
+  tags: string[]
+  isPublic: boolean
+  views: number
+  createdAt: datetime
+  updatedAt: datetime
+}
+
+entity "Comment" {
+  *content: string
+  --
+  createdAt: datetime
+}
+
+User ||--o{ Note : creates
+Note ||--o{ Comment : contains
+
+@enduml
+
+@startuml Deployment
+!theme plain
+
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam packageStyle rectangle
+
+skinparam defaultFontName Inter
+skinparam arrowColor #333
+skinparam componentBorderColor #333
+skinparam componentBackgroundColor white
+skinparam packageBackgroundColor white
+skinparam packageBorderColor #DDD
+
+title Deployment Architecture
+
+node "Docker Host" {
+  package "Frontend Container" {
+    component "Next.js 16 (Port: 3001)" as FE
+  }
+
+  package "Backend Container" {
+    component "NestJS 11 (Port: 5000)" as BE
+  }
+
+  package "Database Container" {
+    database "MongoDB (Port: 27017)" as DB
+  }
+
+  package "Network" {
+    component "notes-network" as Net
+  }
+}
+
+package "Docker Compose" {
+  component "docker-compose.yml" as Compose
+}
+
+Compose --> FE : "Build & Run"
+Compose --> BE : "Build & Run"
+Compose --> DB : "Pull & Run"
+Compose --> Net : "Create Network"
+
+FE --> Net : "Connect"
+BE --> Net : "Connect"
+DB --> Net : "Connect"
+
+FE --> BE : "HTTP (3001→5000)"
+BE --> DB : "MongoDB Protocol (5000→27017)"
+
+@enduml
+
+@startuml AuthenticationSequence
+!theme plain
+
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam roundcorner 12
+
+skinparam defaultFontName Inter
+skinparam arrowColor #333
+skinparam componentBorderColor #333
+skinparam componentBackgroundColor white
+
+title Authentication Flow (JWT)
+
+actor User
+participant "Frontend\n(Next.js)" as FE
+participant "Security Layer\n(Helmet + Rate Limit)" as Security
+participant "Backend\n(NestJS)" as BE
+participant "AuthService" as Auth
+participant "MongoDB" as DB
+
+== Registration Flow ==
+User -> FE : Enter username/password
+FE -> Security : POST /api/auth/register
+Security -> Security : Check rate limit (5/15min)
+Security -> BE : Forward request
+BE -> Auth : register(dto)
+Auth -> DB : Find user by username
+DB -->> Auth : null (not found)
+Auth -> Auth : Hash password (bcrypt, 10 rounds)
+Auth -> DB : Create user document
+DB -->> Auth : User created
+Auth -> Auth : Generate JWT (7-day expiry)
+Auth -->> BE : { accessToken, user }
+BE -->> Security : 201 Created
+Security -->> FE : Response
+FE -->> User : Success + Store JWT
+
+== Login Flow ==
+User -> FE : Enter credentials
+FE -> Security : POST /api/auth/login
+Security -> Security : Check rate limit (5/15min)
+Security -> BE : Forward request
+BE -> Auth : login(dto)
+Auth -> DB : Find user by username
+DB -->> Auth : User document
+Auth -> Auth : Compare password (bcrypt)
+Auth -> Auth : Generate JWT (sub: userId, username)
+Auth -->> BE : { accessToken, user }
+BE -->> Security : 200 OK
+Security -->> FE : Response
+FE -->> User : Success + Store JWT
+
+== Protected Request Flow ==
+User -> FE : Access protected route
+FE -> Security : GET /api/notes\nAuthorization: Bearer <token>
+Security -> Security : Check rate limit (100/15min)
+Security -> BE : Forward with token
+BE -> BE : JWT Guard validates token
+BE -> BE : Extract user from payload
+BE -> DB : Query with userId
+DB -->> BE : User's data
+BE -->> Security : Response
+Security -->> FE : Response
+FE -->> User : Display data
+
+@enduml
+
+@startuml ComponentWithIndexes
+!theme plain
+
+skinparam backgroundColor white
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam packageStyle rectangle
+
+skinparam defaultFontName Inter
+skinparam arrowColor #333
+skinparam componentBorderColor #333
+skinparam componentBackgroundColor white
+skinparam packageBackgroundColor white
+skinparam packageBorderColor #DDD
+
+title Component Diagram with Database Indexes
+
+left to right direction
+
+package "Frontend (Next.js 16)" {
+  component "Notes Page" as NP
+  component "Note Detail" as ND
+  component "Create / Edit Form" as CF
+}
+
+package "Security Layer" {
+  component "Helmet" as HELMET
+  component "Rate Limiter" as RATE
+}
+
+package "Backend (NestJS)" {
+  component "Notes Controller" as NC
+  component "Notes Service" as NS
+  component "DTOs" as DTO
+  component "Validation Pipes" as VP
+  component "JWT Guard" as JWT
+  component "Input Sanitization" as SANITIZE
+}
+
+package "MongoDB Layer" {
+  component "Notes Collection" as COL
+  component "Text Index" as TIDX
+  component "Compound Index\n(userId+isPublic+createdAt)" as CIDX
+  component "Tag Index\n(tags+isPublic+createdAt)" as TAGIDX
+  component "Sparse Index\n(views>100)" as SPIDX
+  component "User Index\n(username unique)" as UIDX
+  component "Stats Aggregation" as PL
+}
+
+database "MongoDB Cluster" as DB
+
+' Frontend → Security
+NP --> HELMET
+ND --> HELMET
+CF --> HELMET
+
+' Security Flow
+HELMET --> RATE : Security Headers
+RATE --> NC : Filtered Requests
+
+' Backend Flow
+NC --> JWT : Protected Routes
+NC --> VP : validate & sanitize
+VP --> SANITIZE : @Transform
+SANITIZE --> DTO : clean data
+DTO --> NS : business logic
+
+' Backend → DB with Indexes
+NS --> COL : insertOne()
+NS --> TIDX : Text Search
+NS --> CIDX : User Notes Query
+NS --> TAGIDX : Tag Filter
+NS --> SPIDX : Popular Notes
+NS --> UIDX : User Lookup
+NS --> PL : Aggregation
+
+COL --> DB
+TIDX --> DB
+CIDX --> DB
+TAGIDX --> DB
+SPIDX --> DB
+UIDX --> DB
+PL --> DB
+
+@enduml
+
+@startuml UseCase
+!theme plain
+
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam roundcorner 12
+
+skinparam defaultFontName Inter
+skinparam arrowColor #333
+skinparam usecaseBackgroundColor white
+skinparam actorBackgroundColor white
+
+title Use Case Diagram
+
+actor "User" as User
+
+rectangle "NoSQL Notes Application" {
+  usecase "Register Account" as UC1
+  usecase "Login" as UC2
+  usecase "Create Note" as UC3
+  usecase "View Notes List" as UC4
+  usecase "View Note Details" as UC5
+  usecase "Edit Note" as UC6
+  usecase "Delete Note" as UC7
+  usecase "Add Comment" as UC8
+  usecase "Search Notes" as UC9
+  usecase "Filter by Tags" as UC10
+  usecase "Sort Notes" as UC11
+  usecase "View Statistics" as UC12
+  usecase "View Activity Feed" as UC13
+}
+
+User --> UC1
+User --> UC2
+User --> UC3
+User --> UC4
+User --> UC5
+User --> UC6
+User --> UC7
+User --> UC8
+User --> UC9
+User --> UC10
+User --> UC11
+User --> UC12
+User --> UC13
+
+UC2 ..> UC3 : <<extend>>
+UC2 ..> UC6 : <<extend>>
+UC2 ..> UC7 : <<extend>>
+UC2 ..> UC8 : <<extend>>
 
 @enduml

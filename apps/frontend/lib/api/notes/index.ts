@@ -9,16 +9,29 @@ import {
   NoteStats,
   ActivityItem,
   SortOption,
+  SortAlgorithm,
+  SortAlgorithmInfo,
+  NotesResponse,
 } from "./types";
 
 export const notesApi = {
-  getAll: (tag?: string, search?: string, sort?: SortOption) => {
+  getAll: (
+    tag?: string,
+    search?: string,
+    sort?: SortOption,
+    algorithm?: SortAlgorithm,
+    page?: number,
+    limit?: number,
+  ) => {
     const params = new URLSearchParams();
     if (tag) params.append("tag", tag);
     if (search) params.append("search", search);
     if (sort) params.append("sort", sort);
+    if (algorithm) params.append("algorithm", algorithm);
+    if (page) params.append("page", page.toString());
+    if (limit) params.append("limit", limit.toString());
     const queryString = params.toString();
-    return api.get<NoteListItem[]>(
+    return api.get<NotesResponse>(
       queryString ? `/notes?${queryString}` : "/notes",
     );
   },
@@ -45,15 +58,26 @@ export const notesApi = {
       queryString ? `/notes/activity?${queryString}` : "/notes/activity",
     );
   },
+
+  getSortAlgorithms: () => api.get<{ algorithms: SortAlgorithmInfo[] }>("/sort/algorithms"),
+
+  getSortAlgorithm: (id: string) => api.get<SortAlgorithmInfo>(`/sort/algorithms/${id}`),
 };
 
 // tanstack query hooks
 
-export const useNotes = (tag?: string, search?: string, sort?: SortOption) => {
+export const useNotes = (
+  tag?: string,
+  search?: string,
+  sort?: SortOption,
+  algorithm?: SortAlgorithm,
+  page?: number,
+  limit?: number,
+) => {
   return useQuery({
-    queryKey: ["notes", tag, search, sort],
-    queryFn: () => notesApi.getAll(tag, search, sort),
-    select: (response) => response.data || [],
+    queryKey: ["notes", tag, search, sort, algorithm, page, limit],
+    queryFn: () => notesApi.getAll(tag, search, sort, algorithm, page, limit),
+    select: (response) => response.data,
     retry: 2,
     staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
@@ -84,6 +108,24 @@ export const useNoteActivity = (limit?: number) => {
     queryFn: () => notesApi.getActivity(limit),
     select: (response) => response.data || [],
     staleTime: 1000 * 60,
+  });
+};
+
+export const useSortAlgorithms = () => {
+  return useQuery({
+    queryKey: ["sort", "algorithms"],
+    queryFn: () => notesApi.getSortAlgorithms(),
+    select: (response) => response.data?.algorithms || [],
+    staleTime: 1000 * 60 * 10,
+  });
+};
+
+export const useSortAlgorithm = (id: string) => {
+  return useQuery({
+    queryKey: ["sort", "algorithm", id],
+    queryFn: () => notesApi.getSortAlgorithm(id),
+    select: (response) => response.data,
+    enabled: !!id,
   });
 };
 

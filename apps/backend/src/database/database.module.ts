@@ -1,4 +1,4 @@
-import { DynamicModule, Module } from '@nestjs/common';
+import { DynamicModule, Logger, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 
@@ -16,13 +16,20 @@ function sanitizeUri(uri: string): string {
 @Module({})
 export class DatabaseModule {
   static forRoot(): DynamicModule {
+    const logger = new Logger('DatabaseModule');
+
     const imports = [
       ConfigModule,
       MongooseModule.forRootAsync({
         imports: [ConfigModule],
         useFactory: async (configService: ConfigService) => {
-          const uri = configService.get('MONGODB_URI') || process.env.MONGODB_URI || 'mongodb://localhost:27017/notes';
-          return { uri: sanitizeUri(uri) };
+          const uri =
+            configService.get('MONGODB_URI') ||
+            process.env.MONGODB_URI ||
+            'mongodb://localhost:27017/notes';
+          // Log sanitized URI for security, but use actual URI for connection
+          logger.log(`Connecting to MongoDB: ${sanitizeUri(uri)}`);
+          return { uri };
         },
         inject: [ConfigService],
       }),

@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { useNote, useDeleteNote, useAddComment } from "@/lib/api/notes";
+import { useAuth } from "@/app/auth-context";
 import Loading from "@/components/Loading";
 
 export default function NoteDetailPage() {
@@ -14,8 +15,11 @@ export default function NoteDetailPage() {
   const { data: note, isLoading, error } = useNote(id);
   const deleteNote = useDeleteNote();
   const addComment = useAddComment();
+  const { user } = useAuth();
   const [commentContent, setCommentContent] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const isOwner = user?.id === note?.userId;
 
   if (isLoading) {
     return <Loading />;
@@ -90,14 +94,31 @@ export default function NoteDetailPage() {
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              {note.title}
-            </h1>
+            <div className="flex items-center justify-between mb-4">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                {note.title}
+              </h1>
+              <span
+                className={`text-xs px-2 py-1 rounded ${
+                  note.isPublic
+                    ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
+                    : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                }`}
+              >
+                {note.isPublic ? "Public" : "Private"}
+              </span>
+            </div>
             <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-4">
+              <span>by {note.username}</span>
+              <span>•</span>
               <span>Created: {formatDate(note.createdAt)}</span>
               {note.updatedAt !== note.createdAt && (
-                <span>Updated: {formatDate(note.updatedAt)}</span>
+                <>
+                  <span>•</span>
+                  <span>Updated: {formatDate(note.updatedAt)}</span>
+                </>
               )}
+              <span>•</span>
               <span className="flex items-center gap-1">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -124,12 +145,9 @@ export default function NoteDetailPage() {
             <ReactMarkdown>{note.content}</ReactMarkdown>
           </div>
 
-          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Comments ({note.comments.length})
-              </h2>
-              <div className="flex gap-4">
+          {isOwner && (
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+              <div className="flex gap-4 mb-6">
                 <Link
                   href={`/notes/${id}/edit`}
                   className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
@@ -144,26 +162,60 @@ export default function NoteDetailPage() {
                 </button>
               </div>
             </div>
+          )}
+
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+              Comments ({note.comments.length})
+            </h2>
 
             {/* Comment Form */}
-            <form onSubmit={handleAddComment} className="mb-6">
-              <div className="mb-4">
-                <textarea
-                  value={commentContent}
-                  onChange={(e) => setCommentContent(e.target.value)}
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Add a comment..."
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={!commentContent.trim() || addComment.isPending}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {addComment.isPending ? "Adding..." : "Add Comment"}
-              </button>
-            </form>
+            {isOwner ? (
+              <form onSubmit={handleAddComment} className="mb-6">
+                <div className="mb-4">
+                  <textarea
+                    value={commentContent}
+                    onChange={(e) => setCommentContent(e.target.value)}
+                    rows={3}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Add a comment..."
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={!commentContent.trim() || addComment.isPending}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {addComment.isPending ? "Adding..." : "Add Comment"}
+                </button>
+              </form>
+            ) : user ? (
+              <form onSubmit={handleAddComment} className="mb-6">
+                <div className="mb-4">
+                  <textarea
+                    value={commentContent}
+                    onChange={(e) => setCommentContent(e.target.value)}
+                    rows={3}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Add a comment..."
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={!commentContent.trim() || addComment.isPending}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {addComment.isPending ? "Adding..." : "Add Comment"}
+                </button>
+              </form>
+            ) : (
+              <p className="text-gray-500 dark:text-gray-400 mb-6">
+                <Link href="/login" className="text-blue-600 hover:text-blue-700">
+                  Login
+                </Link>{" "}
+                to add a comment.
+              </p>
+            )}
 
             {/* Comments List */}
             {note.comments.length === 0 ? (

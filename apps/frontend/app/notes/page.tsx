@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useRef, Suspense } from "react";
+import { useState, useRef, Suspense, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import NoteCard from "@/components/NoteCard";
 import Loading from "@/components/Loading";
-import { useNotes, SortOption } from "@/lib/api/notes";
+import { useNotes, useSortAlgorithms, SortOption, SortAlgorithm } from "@/lib/api/notes";
 
 function TagFilter({
   tags,
@@ -22,9 +22,7 @@ function TagFilter({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mr-2">
-        Tags:
-      </span>
+      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mr-2">Tags:</span>
       {tags.map((tag) => (
         <button
           key={tag}
@@ -50,6 +48,70 @@ function TagFilter({
   );
 }
 
+function Pagination({ pagination, onPageChange, onLimitChange }: {
+  pagination: { page: number; limit: number; total: number; totalPages: number; hasNext: boolean; hasPrev: boolean };
+  onPageChange: (page: number) => void;
+  onLimitChange: (limit: number) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between mt-6">
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-gray-600 dark:text-gray-400">Show:</span>
+        <select
+          value={pagination.limit}
+          onChange={(e) => onLimitChange(parseInt(e.target.value))}
+          className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+        >
+          <option value="10">10</option>
+          <option value="25">25</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+        <span className="text-sm text-gray-600 dark:text-gray-400">of {pagination.total} notes</span>
+      </div>
+      
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => onPageChange(pagination.page - 1)}
+          disabled={!pagination.hasPrev}
+          className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-700"
+        >
+          Prev
+        </button>
+        <span className="text-sm text-gray-600 dark:text-gray-400">
+          Page {pagination.page} of {pagination.totalPages}
+        </span>
+        <button
+          onClick={() => onPageChange(pagination.page + 1)}
+          disabled={!pagination.hasNext}
+          className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-700"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PerformanceBadge({ performance }: { performance: { executionTimeMs: number; algorithmName: string; timeComplexity: string } }) {
+  return (
+    <div className="bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-lg p-3 mt-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <span className="text-xs font-medium text-green-700 dark:text-green-300 uppercase">Performance</span>
+          <div className="text-lg font-bold text-green-800 dark:text-green-200">
+            {performance.executionTimeMs} ms
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="text-sm text-green-700 dark:text-green-300">{performance.algorithmName}</div>
+          <div className="text-xs text-green-600 dark:text-green-400">{performance.timeComplexity}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function NotesList() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -57,65 +119,105 @@ function NotesList() {
   const activeTag = searchParams.get("tag");
   const urlSearch = searchParams.get("search") || "";
   const urlSort = (searchParams.get("sort") as SortOption) || "newest";
+  const urlAlgorithm = (searchParams.get("algorithm") as SortAlgorithm) || "merge";
+  const urlPage = parseInt(searchParams.get("page") || "1");
+  const urlLimit = parseInt(searchParams.get("limit") || "10");
 
   const [searchInput, setSearchInput] = useState(urlSearch);
   const [sortOption, setSortOption] = useState<SortOption>(urlSort);
+  const [algorithm, setAlgorithm] = useState<SortAlgorithm>(urlAlgorithm);
+  const [page, setPage] = useState(urlPage);
+  const [limit, setLimit] = useState(urlLimit);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const { data: sortAlgorithms = [] } = useSortAlgorithms();
+
+  const { data: response, isLoading, error } = useNotes(
+    activeTag || undefined,
+    urlSearch || undefined,
+    urlSort,
+    urlAlgorithm,
+    urlPage,
+    urlLimit,
+  );
+
+  const notes = response?.data || [];
+  const pagination = response?.pagination;
+  const performance = response?.performance;
 
   const handleSearch = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    setPage(1);
     const params = new URLSearchParams(searchParams);
     if (searchInput.trim().length >= 2) {
       params.set("search", searchInput.trim());
-    } else if (searchInput.trim().length === 0) {
-      params.delete("search");
     } else {
-      return;
+      params.delete("search");
     }
+    params.set("page", "1");
     router.push(`/notes?${params.toString()}`, { scroll: false });
   };
 
-  const {
-    data: notes = [],
-    isLoading,
-    error,
-  } = useNotes(activeTag || undefined, urlSearch || undefined, urlSort);
-
   const handleSortChange = (newSort: SortOption) => {
     setSortOption(newSort);
+    setPage(1);
     const params = new URLSearchParams(searchParams);
     params.set("sort", newSort);
+    params.set("page", "1");
+    router.push(`/notes?${params.toString()}`, { scroll: false });
+  };
+
+  const handleAlgorithmChange = (newAlgo: SortAlgorithm) => {
+    setAlgorithm(newAlgo);
+    setPage(1);
+    const params = new URLSearchParams(searchParams);
+    params.set("algorithm", newAlgo);
+    params.set("page", "1");
+    router.push(`/notes?${params.toString()}`, { scroll: false });
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    const params = new URLSearchParams(searchParams);
+    params.set("page", newPage.toString());
+    router.push(`/notes?${params.toString()}`, { scroll: false });
+  };
+
+  const handleLimitChange = (newLimit: number) => {
+    setLimit(newLimit);
+    setPage(1);
+    const params = new URLSearchParams(searchParams);
+    params.set("limit", newLimit.toString());
+    params.set("page", "1");
     router.push(`/notes?${params.toString()}`, { scroll: false });
   };
 
   const handleTagClick = (tag: string) => {
+    setPage(1);
     const params = new URLSearchParams(searchParams);
     if (activeTag === tag) {
       params.delete("tag");
     } else {
       params.set("tag", tag);
     }
+    params.set("page", "1");
     router.push(`/notes?${params.toString()}`, { scroll: false });
   };
 
   const handleClearAll = () => {
     setSearchInput("");
+    setPage(1);
     router.push("/notes", { scroll: false });
-  };
-
-  const handleClearTag = () => {
-    const params = new URLSearchParams(searchParams);
-    params.delete("tag");
-    router.push(`/notes?${params.toString()}`, { scroll: false });
   };
 
   const handleClearSearch = () => {
     setSearchInput("");
-    const params = new URLSearchParams(searchParams);
-    params.delete("search");
-    router.push(`/notes?${params.toString()}`, { scroll: false });
     searchInputRef.current?.focus();
   };
+
+  const allTags = useMemo(() => {
+    return Array.from(new Set(notes.flatMap((n) => n.tags))).sort();
+  }, [notes]);
 
   if (isLoading) {
     return <Loading />;
@@ -125,38 +227,20 @@ function NotesList() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
-          <p className="text-red-600 dark:text-red-400 text-lg">
-            Failed to fetch notes
-          </p>
+          <p className="text-red-600 dark:text-red-400 text-lg">Failed to fetch notes</p>
         </div>
       </div>
     );
   }
-
-  // Get all unique tags from notes (limited to those matching current search if any)
-  const uniqueTags = Array.from(
-    new Set(
-      notes.flatMap((n) => n.tags).filter((t): t is string => Boolean(t)),
-    ),
-  ).sort();
-
-  // If we have an active tag but the backend doesn't filter it locally (depends on API implementation)
-  // We'll trust the API for now since we updated useNotes to pass the tag.
-  const displayNotes = notes;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
-            {activeTag || searchParams.get("search")
-              ? "Filtered Notes"
-              : "All Notes"}
+            {activeTag || searchParams.get("search") ? "Filtered Notes" : "All Notes"}
           </h1>
-          <Link
-            href="/notes/new"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium"
-          >
+          <Link href="/notes/new" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium">
             New Note
           </Link>
         </div>
@@ -169,15 +253,11 @@ function NotesList() {
                 type="text"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search notes by title or content (min 2 chars)..."
-                className="w-full pl-4 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Search notes..."
+                className="w-full pl-4 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900"
               />
               {searchInput && (
-                <button
-                  type="button"
-                  onClick={handleClearSearch}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                >
+                <button type="button" onClick={handleClearSearch} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                   ✕
                 </button>
               )}
@@ -185,59 +265,68 @@ function NotesList() {
             <select
               value={sortOption}
               onChange={(e) => handleSortChange(e.target.value as SortOption)}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-2 border border-gray-300 rounded-md bg-white dark:bg-gray-900"
             >
-              <option value="newest">Newest First</option>
-              <option value="oldest">Oldest First</option>
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
               <option value="alpha">A-Z</option>
+              <option value="views">Most Views</option>
+              <option value="comments">Most Comments</option>
             </select>
-            <button
-              type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium transition-colors"
+            <select
+              value={algorithm}
+              onChange={(e) => handleAlgorithmChange(e.target.value as SortAlgorithm)}
+              className="px-4 py-2 border border-gray-300 rounded-md bg-white dark:bg-gray-900"
             >
+              {sortAlgorithms.map((algo) => (
+                <option key={algo.id} value={algo.id}>
+                  {algo.name}
+                </option>
+              ))}
+            </select>
+            <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium">
               Search
             </button>
           </form>
 
-          <TagFilter
-            tags={uniqueTags}
-            activeTag={activeTag}
-            onTagClick={handleTagClick}
-            onClear={handleClearTag}
-          />
+          <TagFilter tags={allTags} activeTag={activeTag} onTagClick={handleTagClick} onClear={() => handleTagClick(activeTag || "")} />
 
           {(activeTag || searchParams.get("search")) && (
             <div className="flex justify-end">
-              <button
-                onClick={handleClearAll}
-                className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium"
-              >
+              <button onClick={handleClearAll} className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 font-medium">
                 Clear all filters
               </button>
             </div>
           )}
         </div>
 
-        {displayNotes.length === 0 ? (
+        {performance && <PerformanceBadge performance={performance} />}
+
+        {notes.length === 0 ? (
           <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-lg border border-dashed border-gray-300 dark:border-gray-700">
-            <p className="text-gray-600 dark:text-gray-400 text-lg mb-4">
-              No notes found matching your criteria.
-            </p>
-            <button
-              onClick={handleClearAll}
-              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
-            >
-              Reset all filters
+            <p className="text-gray-600 dark:text-gray-400 text-lg mb-4">No notes found.</p>
+            <button onClick={handleClearAll} className="text-blue-600 hover:text-blue-700 font-medium">
+              Reset filters
             </button>
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {displayNotes.map((note) => (
-              <Link key={note.id} href={`/notes/${note.id}`}>
-                <NoteCard note={note} />
-              </Link>
-            ))}
-          </div>
+          <>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {notes.map((note) => (
+                <Link key={note.id} href={`/notes/${note.id}`}>
+                  <NoteCard note={note} />
+                </Link>
+              ))}
+            </div>
+
+            {pagination && (
+              <Pagination
+                pagination={pagination}
+                onPageChange={handlePageChange}
+                onLimitChange={handleLimitChange}
+              />
+            )}
+          </>
         )}
       </div>
     </div>
