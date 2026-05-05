@@ -52,8 +52,8 @@ async function bootstrap() {
   });
 
   app.use(limiter);
-  // Apply auth limiter to auth routes
-  app.use('/api/auth/(login|register)', authLimiter);
+  // Apply auth limiter to auth routes (login and register)
+  app.use(['/api/auth/login', '/api/auth/register'], authLimiter);
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -77,7 +77,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs', app, document);
 
-  const corsOrigin = 'http://localhost:3001';
+  const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:5002';
   app.enableCors({
     origin: corsOrigin,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
